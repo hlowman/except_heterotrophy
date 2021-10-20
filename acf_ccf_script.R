@@ -32,10 +32,14 @@ figure1 <- ggplot(cc11, aes(x = Date)) +
 diff_c11_er <- diff(-cc11$ER,1)
 diff_c11_gpp <- diff(cc11$GPP,1)
 
+# And creat vectors for the raw data.
+c11_er <- -cc11$ER
+c11_gpp <- cc11$GPP
+
 # Then, we'll calculate the cross-correlation of both the raw data,
 # and of the lagged differences.
 # Note, the default type = "correlation"
-ccf_11 <- ccf(cc11$GPP, -cc11$ER)
+ccf_11 <- ccf(cc11$GPP, -cc11$ER, na.action = "na.pass")
 ccf_11_diff <- ccf(diff_c11_gpp, diff_c11_er)
 
 # End of script.
