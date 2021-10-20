@@ -27,20 +27,34 @@ figure1 <- ggplot(cc11, aes(x = Date)) +
 # https://nwfsc-timeseries.github.io/atsa-labs/sec-tslab-correlation-within-and-among-time-series.html
 # http://r-statistics.co/Time-Series-Analysis-With-R.html
 
-# Canyon Creek 2011 data
 # First, we'll calculate the lagged differences, as Diamond did.
 diff_c11_er <- diff(-cc11$ER,1)
 diff_c11_gpp <- diff(cc11$GPP,1)
 
 # And creat vectors for the raw data.
-c11_er <- -cc11$ER
-c11_gpp <- cc11$GPP
+cc11_er <- -cc11$ER
+cc11_gpp <- cc11$GPP
 
 # Then, we'll calculate the cross-correlation of both the raw data,
 # and of the lagged differences.
 # Note, the default type = "correlation"
-ccf_11 <- ccf(cc11$GPP, -cc11$ER, na.action = "na.pass")
-ccf_11_diff <- ccf(diff_c11_gpp, diff_c11_er)
+# na.action = na.pass will skip all NAs in the dataset
+ccf_11 <- ccf(cc11_gpp, cc11_er, na.action = na.pass)
+ccf_11_diff <- ccf(diff_c11_gpp, diff_c11_er, na.action = na.pass)
+
+# Transform data into dataframes
+df_ccf_11 <- data.frame(year = "2011", Lag = ccf_11$lag, CCF = ccf_11$acf)
+df_ccf_11_diff <- data.frame(year = "2011", Lag = ccf_11_diff$lag, CCF = ccf_11_diff$acf)
+
+# Plot the data
+ggplot(df_ccf_11) +
+  geom_col(aes(x = Lag, y = CCF), width = 0.2) +
+  labs(title = "Daily cross-correlation - raw data") +
+  theme_bw()
+
+ggplot(df_ccf_11_diff) +
+  geom_col(aes(x = Lag, y = CCF), width = 0.2) +
+  labs(title = "Daily cross-correlation - lagged differences") +
+  theme_bw()
 
 # End of script.
-
