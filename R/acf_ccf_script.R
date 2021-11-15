@@ -8,7 +8,7 @@ library(here)
 library(tseries)
 
 # Load data
-dat <- read_csv("selected_autotrophic_rivers_daily.csv")
+dat <- read_csv("data_working/selected_autotrophic_rivers_daily.csv")
 
 # Select Canyon Creek data
 cc11 <- dat %>%
