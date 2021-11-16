@@ -28,3 +28,4 @@ vignettes/*.pdf
 .Renviron
 # Data folders with large datasets
 data_raw
+data_ignored
