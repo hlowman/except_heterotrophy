@@ -129,7 +129,9 @@ saveRDS(auto_df, "data_working/autotrophic_event_durations.rds")
 ## Which sites have long periods of NEP > 0
 #############################################
 
-#auto_df <- readRDS("autotrophic_event_durations.rds")
+# Read in dataset created above
+auto_df <- readRDS("data_working/autotrophic_event_durations.rds")
+
 auto_df[which(auto_df$event_dur > 30),]
 
 ## Group them
@@ -149,7 +151,7 @@ auto_df$NEP_thresh_name <- factor(auto_df$NEP_thresh,
                                              "1" = "NEP > 1",
                                              "5" = "NEP > 5"))
 
-ggplot(auto_df, aes(quant_val, fill=as.factor(NEP_thresh)))+
+(fig1 <- ggplot(auto_df, aes(quant_val, fill=as.factor(NEP_thresh)))+
   geom_bar(alpha=0.4, color="black", position="identity")+
   theme_bw()+
   theme(panel.grid.major.y = element_line(color="gray85"),
@@ -157,7 +159,13 @@ ggplot(auto_df, aes(quant_val, fill=as.factor(NEP_thresh)))+
         axis.text.x = element_text(size=14, angle=35, hjust = 1),
         axis.text.y = element_text(size=14),
         legend.position = "top")+
-  labs(x="Event duration", y="Number of events")
+  labs(x="Event duration", y="Number of events"))
+
+# ggsave(("figures/auto_events_duration.png"),
+#        width = 25,
+#        height = 15,
+#        units = "cm"
+# )
 
 #############################
 ## What month is the onset?
@@ -165,10 +173,16 @@ ggplot(auto_df, aes(quant_val, fill=as.factor(NEP_thresh)))+
 
 auto_df$month <- month(auto_df$start_date)
 
-ggplot(auto_df, aes(as.factor(month)))+
+(fig2 <- ggplot(auto_df, aes(as.factor(month)))+
   geom_bar(alpha=0.4, color="black", position="identity")+
   facet_wrap(~as.factor(quant_val), ncol=1, scales = "free_y")+
-  theme_bw()
+  theme_bw())
+
+# ggsave(("figures/auto_events_onset.png"),
+#        width = 25,
+#        height = 15,
+#        units = "cm"
+# )
 
 ############################
 ## Mean duration per site
@@ -196,7 +210,7 @@ site_info <- read.table("data_356rivers/site_data.tsv",sep = "\t", header=T)
 auto_1$site_name <- auto_1$SiteID
 auto_1 <- merge(auto_1, site_info, by="site_name")
 
-ggmap(get_stamenmap(bbox=c(-125, 25, -66, 50), zoom = 5, 
+(fig3 <- ggmap(get_stamenmap(bbox=c(-125, 25, -66, 50), zoom = 5, 
                     maptype='toner'))+
   geom_point(data = auto_1, aes(x = lon, y = lat, 
                                  fill=event_dur, size=event_dur),
@@ -209,6 +223,12 @@ ggmap(get_stamenmap(bbox=c(-125, 25, -66, 50), zoom = 5,
                       labels=c("1 day", "1 week", "2 weeks"))+
   scale_size_continuous("Mean Event Duration",
                         breaks = c(1,7,14),
-                        labels=c("1 day", "1 week", "2 weeks"))
+                        labels=c("1 day", "1 week", "2 weeks")))
+
+# ggsave(("figures/auto_events_USmap.png"),
+#        width = 25,
+#        height = 15,
+#        units = "cm"
+# )
 
 # End of script.
