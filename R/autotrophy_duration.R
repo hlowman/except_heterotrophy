@@ -16,7 +16,7 @@ lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
 # DO NOT push it to GitHub! Instead, we recommend you place
 # it in a folder and then put that folder in "gitignore".
 # https://www.sciencebase.gov/catalog/item/59eb9c0ae4b0026a55ffe389
-df <- read.table("data_raw/daily_predictions.tsv", sep="\t", header=T)
+df <- read.table("data_ignored/daily_predictions.tsv", sep="\t", header=T)
 #diagnostics <- read.table("diagnostics.tsv",sep = "\t", header=T)
 
 ## Subset to high quality days
