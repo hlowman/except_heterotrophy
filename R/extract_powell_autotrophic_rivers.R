@@ -63,9 +63,14 @@ nrow(pw_only)
 # 
 # annual <- sp_dat %>%
 #   group_by(site_name, year) %>%
-#   summarize(across(ends_with('filled'), sum)) %>%
+#   summarize(disch_cv = sd(Disch_filled, na.rm = T)/mean(Disch_filled, na.rm = T),
+#             across(c('GPP_filled', 'ER_filled', 'NEP_filled'), sum),
+#             across(c('Wtemp_filled', 'Disch_filled', 'PAR_filled'),
+#                    mean, na.rm = T),
+#             gpp_er_cor = cor(GPP, -ER, use = 'complete.obs')) %>%
 #   rename_with(function(x) sub('_filled', '', x), everything()) %>%
-#   select(-ends_with('_C'))
+#   rename(watertemp_mean = Wtemp, disch_mean = Disch, PAR_mean = PAR) %>%
+#   ungroup()
 # 
 # write_csv(annual, 'data_working/annual_gapfilled_values.csv')
 annual <- read_csv('data_working/annual_gapfilled_values.csv')
@@ -85,3 +90,5 @@ auto_sites <- c_years %>%
   select(-siteyear)
 
 write_csv(auto_sites, 'data_working/autotrophic_siteyears_daily.csv')
+write_csv(auto_siteyears, 'data_working/autotrophic_siteyears_annual.csv')
+
