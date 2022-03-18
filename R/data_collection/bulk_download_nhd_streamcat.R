@@ -29,10 +29,9 @@ library(sf)
 
 # 1. setup and helper functions ####
 
-#set your working directory to the location of your site data file.
 #   site data must include latitude and longitude columns (decimal degrees)
-# setwd('C:/Users/Alice Carter/git/except_heterotrophy/data_ignored/')
-sites = readRDS('site_data.rds')
+# dataframe generated from filter_powell_estimates scipt
+sites = readRDS('data_ignored/site_data.rds')
 NAD83 = 4269 #EPSG code for coordinate reference system
 
 comid_from_point = function(lat, long, CRS) {
@@ -224,7 +223,7 @@ streamcat_bulk = function(site_df, streamcat_sets){
 #add COMIDs to your site table. If this doesn't work, update nhdplusTools
 sites$COMID2 = unlist(mapply(comid_from_point, sites$lat,
                             sites$lon, NAD83))
-# compare sites with mismatched COMIDS - it looks like the ones from my database are correct.
+# compare sites with mismatched COMIDS - it looks like the ones from the powell center database are correct.
 mismatch <- sites %>% 
   select(site_name, long_name, lat, lon, COMID, COMID2) %>% 
   mutate(diff = COMID - COMID2) %>% filter( diff != 0)
@@ -276,22 +275,32 @@ colnames(nhdplusv2_data) = toupper(colnames(nhdplusv2_data))
 nhdplusv2_data = nhdplusv2_data[, ! duplicated(colnames(nhdplusv2_data))]
 
 #pick out the variables you want, then join them to your site data
-# nhdplusv2_data = select(nhdplusv2_data, COMID, STREAMORDE, FROMMEAS, TOMEAS, SLOPE,
-#                         REACHCODE, AREASQKM, TOTDASQKM, MAXELEVSMO, MINELEVSMO)
+nhdplusv2_data = select(nhdplusv2_data, COMID, STREAMORDE, HYDROSEQ,  
+                        STARTFLAG, REACHCODE, AREASQKM, TOTDASQKM, LENGTHKM, 
+                        SLOPE, SLOPELENKM, TIDAL, MAXELEVSMO, MINELEVSMO)
+
+colnames(nhdplusv2_data) = paste0("NHD_", colnames(nhdplusv2_data))
+nhdplusv2_data <- dplyr::rename(nhdplusv2_data, COMID = NHD_COMID)
+
 sites_nhd = sites %>% 
-  select(site_name, lat, lon, coord_datum, region, COMID, VPU, reach_proportion) %>%
-  left_join(nhdplusv2_data, by='COMID')
+  select(-NHD_REACHCODE, -NHD_STREAMCALC, -NHD_STREAMORDE, 
+         -NHD_AREASQKM, -NHD_TOTDASQKM, -NHD_SLOPE, -NHD_SLOPELENKM,
+         -NHD_VPUID, -StreamOrde, -WS_area_km2, -WS_area_src) %>%
+  rename_with(.cols=matches('^[a-z0-9]+_[a-z0-9]+_[a-z0-9]+$', ignore.case = F),
+              .fn = function(x) paste0('HydroATLAS_', x)) %>%
+  left_join(nhdplusv2_data, by = 'COMID') 
 sites_nhd = sites_nhd[! duplicated(sites_nhd$site_name),]
 
 #correct catchment area (AREASQKM) based on where each site falls within its reach.
 #use this to correct watershed area (TOTDASQKM) and to determine an areal
 #correction factor that can be multiplied with any areal summary data.
-sites_nhd$AREASQKM_corr = round(sites_nhd$AREASQKM * sites_nhd$reach_proportion, 5)
-sites_nhd$TOTDASQKM_corr = sites_nhd$TOTDASQKM - (sites_nhd$AREASQKM - sites_nhd$AREASQKM_corr)
-sites_nhd$areal_corr_factor = sites_nhd$TOTDASQKM_corr / sites_nhd$TOTDASQKM
+sites_nhd$NHD_AREASQKM_corr = round(sites_nhd$NHD_AREASQKM * sites_nhd$reach_proportion, 5)
+sites_nhd$NHD_TOTDASQKM_corr = sites_nhd$NHD_TOTDASQKM - 
+  (sites_nhd$NHD_AREASQKM - sites_nhd$NHD_AREASQKM_corr)
+sites_nhd$areal_corr_factor = sites_nhd$NHD_TOTDASQKM_corr / sites_nhd$NHD_TOTDASQKM
 
-write_csv(sites_nhd, 'nhd_site_dat.csv')
-sites_nhd <- read_csv( 'nhd_site_dat.csv')
+write_csv(sites_nhd, 'data_ignored/nhd_site_dat.csv')
+sites_nhd <- read_csv( 'data_ignored/nhd_site_dat.csv')
 # 3. get StreamCat data ####
 
 #find out which streamcat datasets are available (case insensitive)
@@ -329,19 +338,24 @@ for(i in 1:6){
 
 #pick out the variables you want, then join them to your site data
 streamcat_data = streamcat_data %>%
-  # select(COMID, ElevWs, Precip8110Ws, Tmin8110Ws, Tmax8110Ws, Tmean8110Ws, 
-  #        RunoffWs, matches('^Pct[a-zA-z]+2011Ws$'), PermWs, RckDepWs, OmWs, 
-  #        WtDepWs, matches('^[a-zA-z0-9]_2008Ws$'), BFIWs, NWs, Al2O3Ws, CaOWs, 
-  #        Fe2O3Ws, K2OWs, MgOWs, Na2OWs, P2O5Ws, SWs, SiO2Ws) %>%
+  select(COMID, ElevWs, PrecipWs, TminWs, TmaxWs, TmeanWs, RunoffWs, 
+         matches('[0-9]{4}Ws$'), ends_with(c('StorWs', 'DensWs')),
+         matches('^Pct[a-zA-z]+Ws$'), CBNFWs, FertWs, ManureWs, WtDepWs, OmWs,
+         PermWs, RckDepWs, BFIWs, HydrlCondWs, NWs, Al2O3Ws, CaOWs, Fe2O3Ws, 
+         K2OWs, MgOWs, Na2OWs, P2O5Ws, SWs, SiO2Ws) %>%
   mutate(precip_runoff_ratio=PrecipWs / RunoffWs)
 
-write_csv(streamcat_data, 'streamcat_data.csv')
-sites_nhd = left_join(sites_nhd, streamcat_data, by='COMID')
+write_csv(streamcat_data, 'data_ignored/streamcat_data.csv')
+streamcat_data <- read_csv('data_ignored/streamcat_data.csv')
+
+sites_nhd = sites_nhd %>%
+  select(-ends_with('Cat'), -NHD_PopDen2010Ws, -NHD_RdDensWs) %>%
+  left_join(streamcat_data, by='COMID')
 sites_nhd = sites_nhd[! duplicated(sites_nhd$site_name),]
 
 #save yer data
 sites_nhd = arrange(sites_nhd, region, site_name)
-write.csv(sites_nhd, 'watershed_summary_data.csv', row.names=FALSE)
+write_csv(sites_nhd, 'data_356rivers/watershed_summary_data.csv')
 
 
 # 4. get MODIS data (this section incomplete) ####
