@@ -14,7 +14,7 @@
 #2. ftp://newftp.epa.gov/EPADataCommons/ORD/NHDPlusLandscapeAttributes/StreamCat/Documentation/VariableList-QuickReference.html
 
 #NOTE: these tools necessarily download a lot of large datasets and store them
-#in memory. keep an eye on your usage.
+#in memory. keep an eye on youir usage.
 library(readr)
 library(stringr)
 library(plyr)
@@ -200,7 +200,14 @@ streamcat_bulk = function(site_df, streamcat_sets){
         row_ext = try(streamcat_from_comid(site_df$region[j],
                                            site_df$COMID[j], streamcat_sets[i]))
         if(! 'try-error' %in% class(row_ext) && nrow(row_ext) == 1){
-          row_base = left_join(row_base, row_ext)
+          if(row_ext[['WsPctFull']] < 90){
+            readr::write_lines(paste(j, site_df$COMID[j], streamcat_sets[i], row_ext$WsPctFull),
+                               file = 'data_ignored/streamcat/low_coverage_data.txt',
+                               append = TRUE)
+          }
+          newcols <- setdiff(colnames(row_ext), colnames(row_base))
+          row_ext <- select(row_ext, COMID, any_of(newcols))
+          row_base = left_join(row_base, row_ext, by = 'COMID')
         }
       }
       
@@ -221,30 +228,41 @@ streamcat_bulk = function(site_df, streamcat_sets){
 
 #COMID is the NHD identifier for any reach in the continental U.S.
 #add COMIDs to your site table. If this doesn't work, update nhdplusTools
-sites$COMID2 = unlist(mapply(comid_from_point, sites$lat,
-                            sites$lon, NAD83))
-# compare sites with mismatched COMIDS - it looks like the ones from the powell center database are correct.
-mismatch <- sites %>% 
-  select(site_name, long_name, lat, lon, COMID, COMID2) %>% 
-  mutate(diff = COMID - COMID2) %>% filter( diff != 0)
+# only get COMIDS for the sites with missing ones because I have double checked all of the powell center ones
+s2 <- sites %>%
+  dplyr::filter(is.na(COMID)) 
+s2$COMID = unlist(mapply(comid_from_point, s2$lat,
+                            s2$lon, NAD83))
+
+sites <- sites %>% filter(!is.na(COMID)) %>% 
+  bind_rows(s2) %>%
+  arrange(COMID)
 
 # add state abbreviations for streamcat:
 states <- data.frame(US_state = state.name, region = state.abb)
-sites <- mutate(sites, COMID = case_when(!is.na(COMID) ~ COMID,
-                                         TRUE ~ COMID2)) %>%  
-  select(-COMID2) %>%
-  filter(!is.na(COMID)) %>%
+sites <- sites %>%  filter(!is.na(COMID)) %>%
   left_join(states, by = 'US_state')
 
 sites %>% filter(is.na(region)) %>%
-  select(long_name, US_state, region)
+  select(site_name, long_name, US_state, region) %>%
+  data.frame()
 
-sites$region[is.na(sites$region)] <- c('MD', rep('AL', 7), 
-                                       'IL', 'TX', 'OR', 'PR', 'PR')
+# manually adding missing states
+sites$US_state[is.na(sites$region)] <-
+  c('Texas', 'Illinois', rep('Florida', 3), rep('New Hampshire', 2), 
+  rep('North Carolina', 2), 'Maryland', rep('Wisconsin', 2), 'Indiana',
+  rep('Alabama', 3), rep('Arizona', 3), rep('Alabama', 4), 'Maryland', 'Oregon',
+  rep('Puerto Rico',2))
+
+sites$region[is.na(sites$region)] <- c('TX', 'IL', rep('FL', 3), rep('NH', 2), 
+                                       rep('NC', 2), 'MD', rep('WI', 2), 'IN',
+                                       rep('AL', 3), rep('AZ', 3), rep('AL', 4),
+                                       'MD', 'OR', rep('PR',2))
 #VPU == NHD vector processing unit. NHDPlusV2 data are downloaded per VPU.
 #add VPUs to your site table and determine reach proportions.
 a <- mapply(vpu_from_point, sites$lat, sites$lon, NAD83)
-a[[409]] <- a[[409]][1] # one of these is giving two vpu's for some reason
+w <- Position(function(x) length(x) > 1, a)
+a[[w]] <- a[[w]][1] # one of these is giving two vpu's for some reason
 
 sites$VPU = unlist(a, recursive = FALSE)
 
@@ -258,9 +276,14 @@ for(i in 1:nrow(sites)){
   if(length(x)==0) x <- NA
   sites$reach_proportion[i] <- x
 }
-# if the reach proportion cannot be calculated, assume the entire reach is included
 
+# do the sites that lie along the same COMID section give different reach props?
+sites[duplicated(sites$COMID)|duplicated(sites$COMID, fromLast = T),] %>%
+  select(COMID, long_name, site_name, reach_proportion)
+
+# if the reach proportion cannot be calculated, assume the entire reach is included
 sites$reach_proportion[is.na(sites$reach_proportion)] <- 1
+
 #construct list of DSN=component pairs to acquire. see NHDPlus docs for more.
 setlist = list('NHDPlusAttributes'='PlusFlowlineVAA',
                'NHDPlusAttributes'='ElevSlope')
@@ -281,15 +304,15 @@ nhdplusv2_data = select(nhdplusv2_data, COMID, STREAMORDE, HYDROSEQ,
 
 colnames(nhdplusv2_data) = paste0("NHD_", colnames(nhdplusv2_data))
 nhdplusv2_data <- dplyr::rename(nhdplusv2_data, COMID = NHD_COMID)
+nhdplusv2_data <- nhdplusv2_data[!duplicated(nhdplusv2_data$COMID),]
 
 sites_nhd = sites %>% 
   select(-NHD_REACHCODE, -NHD_STREAMCALC, -NHD_STREAMORDE, 
          -NHD_AREASQKM, -NHD_TOTDASQKM, -NHD_SLOPE, -NHD_SLOPELENKM,
-         -NHD_VPUID, -StreamOrde, -WS_area_km2, -WS_area_src) %>%
+         -NHD_VPUID, -StreamOrde) %>%
   rename_with(.cols=matches('^[a-z0-9]+_[a-z0-9]+_[a-z0-9]+$', ignore.case = F),
               .fn = function(x) paste0('HydroATLAS_', x)) %>%
   left_join(nhdplusv2_data, by = 'COMID') 
-sites_nhd = sites_nhd[! duplicated(sites_nhd$site_name),]
 
 #correct catchment area (AREASQKM) based on where each site falls within its reach.
 #use this to correct watershed area (TOTDASQKM) and to determine an areal
@@ -308,36 +331,46 @@ query_streamcat_datasets()
 query_streamcat_datasets('ripbuf')
 
 #construct vector of streamcat datasets to acquire (check variable list for deets)
-setlist2 = c('Elevation', 'PRISM_1981_2010', 'NLCD2016', 'Runoff', 
-             'ImperviousSurfaces2011', 'Dams', 'USCensus2010', 'EPA_FRS', 
+
+setlist2 = c('Elevation', 'PRISM_1981_2010', 'NLCD2011', 'NLCD2016', 'Runoff',
+             'ImperviousSurfaces', 'Dams', 'USCensus2010', 'EPA_FRS',
              'Lithology', 'RoadDensity', 'RoadStreamCrossings', 'NABD',
-             'AgriculturalNitrogen', 'STATSGO_Set2', 'NADP', 'GeoChemPhys1', 
+             'AgriculturalNitrogen', 'STATSGO_Set2', 'NADP', 'GeoChemPhys1',
              'GeoChemPhys2', 'GeoChemPhys3', 'BFI')
+
+# use these lines for adding to an already downloaded streamcat file:
+# streamcat_data <- read_csv('data_ignored/streamcat/streamcat_data.csv')
+# sites_sub <- sites_nhd %>% filter(!(COMID %in% unique(streamcat_data$COMID)))
+# streamcat_data1 = streamcat_bulk(sites_sub, setlist2)
+# streamcat_data <- bind_rows(streamcat_data, streamcat_data1)
+# write_csv(streamcat_data, 'data_ignored/streamcat/streamcat_data.csv')
 
 #save in chunks, this is a long process and a lot of data.
 streamcat_data1 = streamcat_bulk(sites_nhd[1:100,], setlist2)
-write_csv(streamcat_data1, 'streamcat_data1.csv')
+write_csv(streamcat_data1, 'data_ignored/streamcat/streamcat_data1.csv')
 streamcat_data1 = streamcat_bulk(sites_nhd[101:200,], setlist2)
-write_csv(streamcat_data1, 'streamcat_data2.csv')
+write_csv(streamcat_data1, 'data_ignored/streamcat/streamcat_data2.csv')
 streamcat_data1 = streamcat_bulk(sites_nhd[201:300,], setlist2)
-write_csv(streamcat_data1, 'streamcat_data3.csv')
+write_csv(streamcat_data1, 'data_ignored/streamcat/streamcat_data3.csv')
 streamcat_data1 = streamcat_bulk(sites_nhd[301:400,], setlist2)
-write_csv(streamcat_data1, 'streamcat_data4.csv')
+write_csv(streamcat_data1, 'data_ignored/streamcat/streamcat_data4.csv')
 streamcat_data1 = streamcat_bulk(sites_nhd[401:500,], setlist2)
-write_csv(streamcat_data1, 'streamcat_data5.csv')
+write_csv(streamcat_data1, 'data_ignored/streamcat/streamcat_data5.csv')
 streamcat_data1 = streamcat_bulk(sites_nhd[501:600,], setlist2)
-write_csv(streamcat_data1, 'streamcat_data6.csv')
+write_csv(streamcat_data1, 'data_ignored/streamcat/streamcat_data6.csv')
 
 # compile chunks
 streamcat_data <- data.frame()
 for(i in 1:6){
-  sc <- read_csv(paste0('streamcat_data', i, '.csv'))
+  sc <- read_csv(paste0('data_ignored/streamcat/streamcat_data', i, '.csv'))
   streamcat_data <- bind_rows(streamcat_data, sc)
 }
 
+write_csv(streamcat_data, 'data_ignored/streamcat/streamcat_data.csv')
+streamcat_data <- read_csv('data_ignored/streamcat/streamcat_data.csv')
 
 #pick out the variables you want, then join them to your site data
-streamcat_data = streamcat_data %>%
+streamcat_filtered = streamcat_data %>%
   select(COMID, ElevWs, PrecipWs, TminWs, TmaxWs, TmeanWs, RunoffWs, 
          matches('[0-9]{4}Ws$'), ends_with(c('StorWs', 'DensWs')),
          matches('^Pct[a-zA-z]+Ws$'), CBNFWs, FertWs, ManureWs, WtDepWs, OmWs,
@@ -345,12 +378,12 @@ streamcat_data = streamcat_data %>%
          K2OWs, MgOWs, Na2OWs, P2O5Ws, SWs, SiO2Ws) %>%
   mutate(precip_runoff_ratio=PrecipWs / RunoffWs)
 
-write_csv(streamcat_data, 'data_ignored/streamcat_data.csv')
-streamcat_data <- read_csv('data_ignored/streamcat_data.csv')
+write_csv(streamcat_filtered, 'data_ignored/streamcat/streamcat_filtered.csv')
 
 sites_nhd = sites_nhd %>%
-  select(-ends_with('Cat'), -NHD_PopDen2010Ws, -NHD_RdDensWs) %>%
-  left_join(streamcat_data, by='COMID')
+  select(-ends_with(c('Cat', '2011Ws')), -starts_with(c('NHD_CatPctFull', 'NHD_WsPctFull')),
+         -NHD_PopDen2010Ws, -NHD_RdDensWs) %>%
+  left_join(streamcat_filtered, by='COMID')
 sites_nhd = sites_nhd[! duplicated(sites_nhd$site_name),]
 
 #save yer data

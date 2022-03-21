@@ -67,6 +67,7 @@ nrow(HQdays[(HQdays$GPP.upper > 0) & (HQdays$GPP_raw < 0),])/
 nrow(HQdays[(HQdays$ER.lower < 0) & (HQdays$ER_raw > 0),])/
   sum(!is.na(HQdays$ER_raw))  # 3.6% of days 
 
+
 # Data from Bernhardt et al 2022: ####
 # https://figshare.com/articles/software/Code_and_RDS_data_for_Bernhardt_et_al_2022_PNAS_/19074140?backTo=/collections/Data_and_code_for_Bernhardt_et_al_2022_PNAS_/5812160
 # Note, to get the lotic_standardized_full dataset 
@@ -111,12 +112,37 @@ sp_dat <- readRDS('data_ignored/Bernhardt_2022/lotic_site_info_filtered.rds')
 GRDO <- read_csv('data_ignored/GRDO_GEE_HA_NHD.csv', guess_max = 10000)
 
 # remove sites not in the powell center and select desired columns:
-sp_dat <- sp_dat %>%
-  filter(Source == 'USGS (Powell Center)') %>%
-  select(site_name = Site_ID, COMID, VPU, ndays, nyears, StreamOrde, Azimuth, 
-         tree_height = TH, Width, WS_area_km2, WS_area_src, ends_with('sum'),
+sp_dat <- sp_dat %>% tibble() %>%
+  # filter(Source == 'USGS (Powell Center)') %>%
+  select(site_name = Site_ID, COMID, VPU, Source, Lat, Lon, ndays, 
+         nyears, StreamOrde, Azimuth, tree_height = TH, Width, ends_with('sum'),
          starts_with(c('ann', 'Wtemp', 'Disch', 'PAR', 'LAI')), MOD_ann_NPP)
 
+# Remove sites that aren't streams and check for duplicates:
+pw_site_dat %>% filter(site_type != "ST") %>% select(site_name, long_name, site_type, lat, lon)
+# all sites are either streams, canals, ditches or tidal streams. For now I will keep them all
+
+pw_site_dat[duplicated(pw_site_dat$site_name)|duplicated(pw_site_dat$site_name, fromLast = T),]
+pw_site_dat[duplicated(pw_site_dat$nhdplus_id)|duplicated(pw_site_dat$nhdplus_id, fromLast = T),] %>%
+  select(nhdplus_id, site_name, long_name, site_type, lat, lon) %>% filter(!is.na(nhdplus_id))
+
+# a handful of these sites are bottom gages in deep rivers (the Klamath). Remove those.
+pw_site_dat <- pw_site_dat %>% filter(!grepl('BOTTOM$', long_name))
+duplicates <-
+  pw_site_dat[duplicated(pw_site_dat$nhdplus_id)|duplicated(pw_site_dat$nhdplus_id, fromLast = T),] %>%
+  select(nhdplus_id, site_name, long_name, site_type, lat, lon) %>% filter(!is.na(nhdplus_id))
+
+# export this file to cross check lat longs with NHD segments manually:
+write_csv(duplicates, 'data_ignored/duplicate_COMIDS.csv')
+
+# several sites fall along Bayou Lake and City Park Lagoon in New Orleans,
+# These show up as being in the NHD HR but not NHD and several share COMIDS.
+# For this project, I think they should be excluded. (Checking above, they also
+# contain no days of metabolism)
+pw_site_dat <- pw_site_dat %>% 
+  filter(!(nhdplus_id %in% c(18910456, 18910424)))
+
+# The remaining duplicates are in fact on the same comid sections.
 
 # Subset GRDO to contain hydroatlas and NHD data
 GRDO_sub <- GRDO %>%
@@ -124,8 +150,11 @@ GRDO_sub <- GRDO %>%
   select(c(3, 6:8, 13:65, 67:100, 145)) %>% glimpse()
 
 df <- full_join(sp_dat, pw_site_dat, by = 'site_name') %>% 
-  mutate(COMID = if_else(is.na(nhdplus_id), COMID, nhdplus_id)) %>% # the comids from the Powell data release look correct when crossref'd with a map. Keep those
-  select(-nhdplus_id, -nwis_id) %>% 
+  mutate(COMID = if_else(is.na(nhdplus_id), COMID, 
+                         nhdplus_id),# the comids from the Powell data have been crossref'd with a map. Keep those
+         lat = if_else(is.na(lat), Lat, lat),
+         lon = if_else(is.na(lon), Lon, lon)) %>% 
+  select(-nhdplus_id, -nwis_id, -Lat, -Lon) %>% 
   left_join(GRDO_sub, by = 'site_name') %>%
   relocate(long_name, 46:51, .after = site_name)
 
