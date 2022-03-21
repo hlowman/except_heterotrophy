@@ -72,7 +72,7 @@ d <- mutate(d, Dam_densityperkm2 = (DamDensWs + NABD_DensWs)/2,
   select(-starts_with(c('Dam', 'NABD')))
 
 # Waste point srcs
-d <- mutate(d, Waste_point_srcs_km2 = SuperfundDensWs + NPDESDensWs + TRIDensWs) %>% 
+d <- mutate(d, Waste_point_srcs_perkm2 = SuperfundDensWs + NPDESDensWs + TRIDensWs) %>% 
   select(-SuperfundDensWs, -NPDESDensWs, -TRIDensWs)
 
 # Other vars that could be grouped:
@@ -91,6 +91,24 @@ d <- d %>%
                                 year >= 2019 ~ PctImp2019Ws)) %>%
   select(-starts_with('PctImp'))
 
+# The only remaining variable with many missing values is LAI, and by extension
+# terrestrial NPP and Streamlight. Interestingly, all sites that are missing
+# this are classified as urban:
+filter(d, is.na(LAI_mean)) %>% 
+  select(year, site_name, IGBP_LU_category, NLCD_LUCat) %>% data.frame()
+
+urb_LAI <- filter(d, IGBP_LU_category == 'urban')
+
+plot(density(d$LAI_mean, na.rm = T), ylim = c(0, .8))
+lines(density(urb_LAI$LAI_mean, na.rm = T), lty = 2)
+lines(density(filter(d, NLCD_LUCat == 'Urban')$LAI_mean, na.rm = T), lty = 3)  
+plot(density(d$Stream_PAR_sum, na.rm = T), ylim = c(0, .2))
+lines(density(urb_LAI$Stream_PAR_sum, na.rm = T), lty = 2)
+lines(density(filter(d, NLCD_LUCat == 'Urban')$Stream_PAR_sum, na.rm = T), lty = 3)  
+# it also doesn't look like there is a clear trend of LAI or streamPAR with urban
+
+# I will try two different analyses, one with these sites taken out and another
+# with these variables taken out.
 
 # remove character columns and identification (not covariate) columns
 d <- select(d, -long_name, -Source, -coord_datum, -alt, -alt_datum, -site_type, 
@@ -110,13 +128,7 @@ d <- d %>%
 w <- which(apply(d, 1, function(x) sum(is.na(x))) >50)
 d <- d[-w,] 
 
-# The only remaining variable with many missing values is LAI, and by extension
-# terrestrial NPP and Streamlight. Interestingly, all sites that are missing
-# this are classified as urban:
-filter(d, is.na(LAI_mean)) %>% select(year, long_name, IGBP_LU_category) %>% data.frame()
-
-# I will try two different analyses, one with these sites taken out and another
-# with these variables taken out.
-
 glimpse(d)
+apply(d, 2, function(x) sum(is.na(x)))
 
+write_csv(d, 'data_working/across_sites_model_data.csv')
