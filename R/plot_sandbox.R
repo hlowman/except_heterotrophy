@@ -2,11 +2,14 @@
 setwd('C:/Users/Alice Carter/git/except_heterotrophy/')
 library(tidyverse)
 library(lubridate)
+# library(here)
 
 # read in autotrophic site years:
 daily <- read_csv('data_working/autotrophic_siteyears_daily.csv')
 annual <- read_csv('data_working/annual_gapfilled_values.csv')
 
+# read in site information
+siteinfo <- read_csv('data_working/across_sites_model_data.csv')
 
 # plot NEP vs GPP
 png('figures/NEPvsGPP_ERcorrelation.png',  height = 480, width = 640)
@@ -73,4 +76,39 @@ auto_dm %>%
  boxplot()+
   scale_y_log10()
 
+# plot of autotrophic site-years by stream order
 
+# select only autotrophic site-years
+annual_aut <- annual %>%
+   filter(NEP > 0)
+
+# pull out stream order data
+site_so <- siteinfo %>%
+  select(site_name, lat, lon, NHD_STREAMORDE) %>%
+  distinct(site_name, NHD_STREAMORDE, .keep_all = TRUE)
+
+aut_streams <- inner_join(site_so, annual_aut, by = (c("site_name"))) %>%
+  mutate(order = factor(NHD_STREAMORDE))
+
+(fig1 <- ggplot(aut_streams, aes(x = order, y = NEP)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(x = "Stream Order",
+       y = "Net Ecosystem Productivity") +
+  theme_minimal())
+
+(fig2 <- ggplot(aut_streams, aes(x = lat, y = NEP)) +
+    geom_point() +
+    scale_y_log10() +
+    labs(x = "Latitude",
+         y = "Net Ecosystem Productivity") +
+    theme_minimal())
+
+(fig3 <- ggplot(aut_streams, aes(x = lon, y = NEP)) +
+    geom_point() +
+    scale_y_log10() +
+    labs(x = "Longitude",
+         y = "Net Ecosystem Productivity") +
+    theme_minimal())
+
+# End of script.
