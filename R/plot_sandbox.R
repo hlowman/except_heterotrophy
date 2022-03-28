@@ -90,25 +90,25 @@ site_so <- siteinfo %>%
 aut_streams <- inner_join(site_so, annual_aut, by = (c("site_name"))) %>%
   mutate(order = factor(NHD_STREAMORDE))
 
-(fig1 <- ggplot(aut_streams, aes(x = order, y = NEP)) +
+(fig1 <- ggplot(aut_streams, aes(x = order, y = GPP)) +
   geom_boxplot() +
   scale_y_log10() +
   labs(x = "Stream Order",
-       y = "Net Ecosystem Productivity") +
+       y = "Gross Primary Productivity") +
   theme_minimal())
 
-(fig2 <- ggplot(aut_streams, aes(x = lat, y = NEP)) +
+(fig2 <- ggplot(aut_streams, aes(x = lat, y = GPP)) +
     geom_point() +
     scale_y_log10() +
     labs(x = "Latitude",
-         y = "Net Ecosystem Productivity") +
+         y = "Gross Primary Productivity") +
     theme_minimal())
 
-(fig3 <- ggplot(aut_streams, aes(x = lon, y = NEP)) +
+(fig3 <- ggplot(aut_streams, aes(x = lon, y = GPP)) +
     geom_point() +
     scale_y_log10() +
     labs(x = "Longitude",
-         y = "Net Ecosystem Productivity") +
+         y = "Gross Primary Productivity") +
     theme_minimal())
 
 # End of script.
