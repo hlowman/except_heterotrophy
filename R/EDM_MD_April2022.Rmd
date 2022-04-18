@@ -14,7 +14,9 @@ library(tidyr)
 library(lme4)
 library(ggplot2)
 library(here)
+devtools::install_github("ha0ye/rEDM")
 
+library(rEDM)
 
 ```
 
@@ -22,26 +24,34 @@ library(here)
 annualstreams <- read.csv(here("data_working/across_sites_model_data.csv"), header=T)
 dailystreams <- read.csv(here("data_working/autotrophic_siteyears_daily.csv"), header=T)
 
+dailystreams$date<-as.Date(dailystreams$date)
 
 
+```{r plot ER and GPP over time daily all streams}
 
-```{r plot ER and GPP over time daily }
 
-
-ERGPP<-ggplot(data=dailystreams) +   geom_line(aes(x = date, y = GPP), color = "green")+ facet_grid(. ~ site_name)
- 
+ERGPP<-ggplot(data=dailystreams) +   geom_line(aes(x = date, y = GPP), color="green")+  geom_line(aes(x = date, y = ER), color = "brown")+ facet_wrap(~ site_name, ncol = 5)
 
 ```
 
+##pull out stream nwis_01400500 2012-2014 ####
+
+
+stream1<-subset(dailystreams, site_name=="nwis_01400500" & year > 2011)
+
+
+ERGPPstream1<-ggplot(data=stream1) +   geom_line(aes(x = date, y = GPP), color="green")+  geom_line(aes(x = date, y = ER), color = "brown")
+
+ccf(stream1$GPP, stream1$ER)
+
+###
 
 
 rdem packge
 
 ```{r rdem package vignette}
 
-devtools::install_github("ha0ye/rEDM")
 
-library(rEDM)
 
 data(tentmap_del)
 str(tentmap_del)
@@ -63,16 +73,16 @@ simplex_output <- simplex(ts, lib, pred, E = 2, tp = 1:10)
 ```
 
 
-```{r rdem  discharge and GPP}
+```{r rdem  ER and GPP}
 
 library(rEDM)
 
-discharge <-pcmci_test_dataset$discharge
+GPP <-stream1$GPP
 
 lib <- c(1, 50)
 pred <- c(51, 100)
 
-simplex_output_R1 <- simplex(discharge, lib, pred)
+simplex_output_R1 <- simplex(GPP, lib, pred)
 str(simplex_output_R1)
 
 
@@ -80,35 +90,35 @@ par(mar = c(4, 4, 1, 1), mgp = c(2.5, 1, 0))  # set margins for plotting
 plot(simplex_output_R1$E,simplex_output_R1$rho, type = "l", xlab = "Embedding Dimension (E)", 
     ylab = "Forecast Skill (rho)")
 
-##peaks at 4##
+##peaks at 9##
 
 
-simplex_output_R1 <- simplex(discharge, lib, pred, E = 4, tp = 1:10)
+simplex_output_R1 <- simplex(GPP, lib, pred, E = 9, tp = 1:10)
 
 
 plot(simplex_output_R1$tp, simplex_output_R1$rho, type = "l", xlab = "Time to Prediction (tp)", 
     ylab = "Forecast Skill (rho)")
 
-##### 2 time series### let's try discharge and GPP##
+##### 2 time series### let's try GPP and ER##
 
 
-popdyn_xmap_discharge <- ccm(pcmci_test_dataset, E = 4, lib_column = "discharge", 
-    target_column = "GPP_raw", lib_sizes = seq(10, 80, by = 10), num_samples = 100, 
+popdyn_xmap_GPP <- ccm(stream1, E = 4, lib_column = "GPP", 
+    target_column = "ER", lib_sizes = seq(10, 80, by = 10), num_samples = 100, 
     random_libs = TRUE, replace = TRUE, silent = TRUE)
 
-popdyn_xmap_GPP <- ccm(pcmci_test_dataset, E = 4, lib_column = "GPP_raw", 
-    target_column = "discharge", lib_sizes = seq(10, 80, by = 10), num_samples = 100, 
+popdyn_xmap_ER <- ccm(stream1, E = 4, lib_column = "ER", 
+    target_column = "GPP", lib_sizes = seq(10, 80, by = 10), num_samples = 100, 
     random_libs = TRUE, replace = TRUE, silent = TRUE)
 
 
-a_xmap_t_means <- ccm_means(popdyn_xmap_discharge)
-t_xmap_a_means <- ccm_means(popdyn_xmap_GPP)
+a_xmap_t_means <- ccm_means(popdyn_xmap_GPP)
+t_xmap_a_means <- ccm_means(popdyn_xmap_ER)
 
 
 plot(a_xmap_t_means$lib_size, pmax(0, a_xmap_t_means$rho), type = "l", col = "black", 
-    xlab = "Library Size", ylab = "Cross Map Skill (rho)", ylim=c(0.1,0.6))
+    xlab = "Library Size", ylab = "Cross Map Skill (rho)", ylim=c(0.5,1))
 lines(t_xmap_a_means$lib_size, pmax(0, t_xmap_a_means$rho), col = "red")
-legend(x = "topleft", legend = c("discharge", "GPP"), col = c("black", 
+legend(x = "topleft", legend = c("GPP", "ER"), col = c("black", 
     "red"), lwd = 1, bty = "n", inset = 0.02, cex = 0.8)
 
 ###interpet as a group....i don't know what this means##
@@ -116,7 +126,7 @@ legend(x = "topleft", legend = c("discharge", "GPP"), col = c("black",
 
 #######
 
-vars <- names(pcmci_test_dataset)[c(3,21)]  # c('GPP_raw', 'discharge')
+vars <- names(stream1)[c(4,9)]  # c('GPP', 'ER')
 
 # generate all combinations of lib_column, target_column, tp
 params <- expand.grid(lib_column = vars, target_column = vars, tp = -10:10)
@@ -128,7 +138,7 @@ params$E <- 4
 
 
 output <- do.call(rbind, lapply(seq_len(NROW(params)), function(i) {
-    ccm(pcmci_test_dataset, E = params$E[i], lib_sizes = NROW(pcmci_test_dataset), 
+    ccm(stream1, E = params$E[i], lib_sizes = NROW(stream1), 
         random_libs = FALSE, lib_column = params$lib_column[i], target_column = params$target_column[i], 
         tp = params$tp[i], silent = TRUE)
 }))
