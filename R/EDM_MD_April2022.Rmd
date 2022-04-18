@@ -13,24 +13,27 @@ library(dplyr)
 library(tidyr)
 library(lme4)
 library(ggplot2)
-
+library(here)
 
 
 ```
 
 
-pcmci_test_dataset <- read_excel("C:/Users/Mitzi/Desktop/Modelscapes and Epscor/except_heterotrophy/data_working/pcmci_test_dataset.xlsx")
+annualstreams <- read.csv(here("data_working/across_sites_model_data.csv"), header=T)
+dailystreams <- read.csv(here("data_working/autotrophic_siteyears_daily.csv"), header=T)
 
 
 
-##lets see if discharge affects GPP, temp, etc.###
+
+```{r plot ER and GPP over time daily }
 
 
-##plot discharge over time###
+ERGPP<-ggplot(data=dailystreams) +   geom_line(aes(x = date, y = GPP), color = "green")+ facet_grid(. ~ site_name)
+ 
 
-dischargeplot<- ggplot(pcmci_test_dataset, aes(x=date, y=discharge)) +
-  geom_line() + 
-  xlab("")
+```
+
+
 
 rdem packge
 
