@@ -201,7 +201,11 @@ streamcat_bulk = function(site_df, streamcat_sets){
                                            site_df$COMID[j], streamcat_sets[i]))
         if(! 'try-error' %in% class(row_ext) && nrow(row_ext) == 1){
           if(row_ext[['WsPctFull']] < 90){
+<<<<<<< Updated upstream:R/data_collection_munging/bulk_download_nhd_streamcat.R
             readr::write_lines(paste(j, site_df$COMID[j], streamcat_sets[i], row_ext$WsPctFull),
+=======
+            readr::write_lines(paste(j, streamcat_sets[i], row_ext$WsPctFull),
+>>>>>>> Stashed changes:R/data_collection/bulk_download_nhd_streamcat.R
                                file = 'data_ignored/streamcat/low_coverage_data.txt',
                                append = TRUE)
           }
@@ -331,9 +335,14 @@ query_streamcat_datasets()
 query_streamcat_datasets('ripbuf')
 
 #construct vector of streamcat datasets to acquire (check variable list for deets)
+<<<<<<< Updated upstream:R/data_collection_munging/bulk_download_nhd_streamcat.R
 
 setlist2 = c('Elevation', 'PRISM_1981_2010', 'NLCD2011', 'NLCD2016', 'Runoff',
              'ImperviousSurfaces', 'Dams', 'USCensus2010', 'EPA_FRS',
+=======
+setlist2 = c('Elevation', 'PRISM_1981_2010', 'NLCD2011', 'NLCD2016', 'Runoff', 
+             'ImperviousSurfaces2011', 'Dams', 'USCensus2010', 'EPA_FRS', 
+>>>>>>> Stashed changes:R/data_collection/bulk_download_nhd_streamcat.R
              'Lithology', 'RoadDensity', 'RoadStreamCrossings', 'NABD',
              'AgriculturalNitrogen', 'STATSGO_Set2', 'NADP', 'GeoChemPhys1',
              'GeoChemPhys2', 'GeoChemPhys3', 'BFI')
@@ -366,7 +375,10 @@ for(i in 1:6){
   streamcat_data <- bind_rows(streamcat_data, sc)
 }
 
+<<<<<<< Updated upstream:R/data_collection_munging/bulk_download_nhd_streamcat.R
 write_csv(streamcat_data, 'data_ignored/streamcat/streamcat_data.csv')
+=======
+>>>>>>> Stashed changes:R/data_collection/bulk_download_nhd_streamcat.R
 streamcat_data <- read_csv('data_ignored/streamcat/streamcat_data.csv')
 
 #pick out the variables you want, then join them to your site data
@@ -378,12 +390,21 @@ streamcat_filtered = streamcat_data %>%
          K2OWs, MgOWs, Na2OWs, P2O5Ws, SWs, SiO2Ws) %>%
   mutate(precip_runoff_ratio=PrecipWs / RunoffWs)
 
+<<<<<<< Updated upstream:R/data_collection_munging/bulk_download_nhd_streamcat.R
 write_csv(streamcat_filtered, 'data_ignored/streamcat/streamcat_filtered.csv')
 
 sites_nhd = sites_nhd %>%
   select(-ends_with(c('Cat', '2011Ws')), -starts_with(c('NHD_CatPctFull', 'NHD_WsPctFull')),
          -NHD_PopDen2010Ws, -NHD_RdDensWs) %>%
   left_join(streamcat_filtered, by='COMID')
+=======
+write_csv(streamcat_data, 'data_ignored/streamcat/streamcat_filtered.csv')
+
+sites_nhd = sites_nhd %>%
+  select(-ends_with('Cat'), -starts_with(c('NHC_CatPctFull', 'NHD_WsPctFull')),
+         -NHD_PopDen2010Ws, -NHD_RdDensWs) %>%
+  left_join(streamcat_data, by='COMID')
+>>>>>>> Stashed changes:R/data_collection/bulk_download_nhd_streamcat.R
 sites_nhd = sites_nhd[! duplicated(sites_nhd$site_name),]
 
 #save yer data

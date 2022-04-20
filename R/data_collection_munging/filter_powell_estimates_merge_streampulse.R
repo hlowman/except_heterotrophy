@@ -112,10 +112,17 @@ sp_dat <- readRDS('data_ignored/Bernhardt_2022/lotic_site_info_filtered.rds')
 GRDO <- read_csv('data_ignored/GRDO_GEE_HA_NHD.csv', guess_max = 10000)
 
 # remove sites not in the powell center and select desired columns:
+<<<<<<< Updated upstream:R/data_collection_munging/filter_powell_estimates_merge_streampulse.R
 sp_dat <- sp_dat %>% tibble() %>%
   # filter(Source == 'USGS (Powell Center)') %>%
   select(site_name = Site_ID, COMID, VPU, Source, Lat, Lon, ndays, 
          nyears, StreamOrde, Azimuth, tree_height = TH, Width, ends_with('sum'),
+=======
+sp_dat <- sp_dat %>%
+  filter(Source == 'USGS (Powell Center)') %>%
+  select(site_name = Site_ID, COMID, VPU, ndays, nyears, StreamOrde, Azimuth, 
+         tree_height = TH, Width, ends_with('sum'),
+>>>>>>> Stashed changes:R/data_collection/filter_powell_estimates_merge_streampulse.R
          starts_with(c('ann', 'Wtemp', 'Disch', 'PAR', 'LAI')), MOD_ann_NPP)
 
 # Remove sites that aren't streams and check for duplicates:
