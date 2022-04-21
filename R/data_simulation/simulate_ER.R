@@ -6,7 +6,7 @@
 
 library(tidyverse)
 library(lubridate)
-# setwd('C:/Users/alice.carter/git/except_heterotrophy/')
+setwd('C:/Users/alice.carter/git/except_heterotrophy/')
 source('R/data_simulation/simulation_functions.R')
 dat <- readRDS('data_356rivers/high_quality_daily_metabolism_with_SP_covariates.rds')
 
@@ -87,6 +87,6 @@ dd %>% filter(year == 2013) %>%
         geom_line() +
         facet_wrap(.~variable, scale = 'free', ncol = 1)
 
-
+write_csv(dd, 'data_working/simulated_ER_nwis_01481500.csv')
 # Simulate ER function: ####
 # coming soon
