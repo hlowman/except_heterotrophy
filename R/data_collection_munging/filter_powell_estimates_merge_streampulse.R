@@ -85,7 +85,7 @@ rownames(sp_filled) <- NULL
 sp_sub <- left_join(sp, sp_filled, by = c('Site_ID', 'Date'))  %>%
   select(-starts_with('DO_'), -ends_with('raw'), -GPP, -ER, 
          -U_ID, -temp_water, -discharge) %>%
-  rename(site_name = Site_ID, date = Date)
+  rename(site_name = Site_ID, date = Date, K600_sp = K600)
 
 # subset columns:
 pw_hq <- HQdays %>%
@@ -93,11 +93,29 @@ pw_hq <- HQdays %>%
   mutate(date = as.Date(date))
 
 # Powell center estimates complete with bernhardt covatiates
-sp_pw <- left_join(pw_hq, sp_sub, by = c('site_name', 'date'))
-summary(sp_pw)
+sp_pw <- left_join(pw_hq, sp_sub, by = c('site_name', 'date')) %>%
+  mutate(K600 = case_when(!is.na(K600)~K600,
+                          TRUE ~ K600_sp),
+         year = lubridate::year(date)) %>%
+  select(-K600_sp)
+
+sp_pw <- pw_site_dat %>% select(site_name, long_name) %>%
+  right_join(sp_pw, by = 'site_name') %>%
+  rename(PAR = PAR_sum, Stream_PAR = Stream_PAR_sum, LAI = LAI_proc)
+  
+#add width and slope
+dat <- read_csv('data_working/annual_summary_data.csv') %>% 
+  select(site_name, year, width = Width, slope = NHD_SLOPE)
+
+sp_pw_all <- left_join(sp_pw, dat, by = c('site_name', 'year'))
+sp_pw_sub <- right_join(sp_pw, dat, by = c('site_name', 'year'))
+
+summary(sp_pw_all)
+
 
 # Save joined database
-saveRDS(sp_pw, 'data_356rivers/high_quality_daily_metabolism_with_SP_covariates.rds')
+saveRDS(sp_pw_all, 'data_ignored/high_quality_daily_metabolism_with_SP_covariates_complete.rds')
+saveRDS(sp_pw_sub, 'data_356rivers/high_quality_daily_metabolism_with_SP_covariates.rds')
 # zip('data_356rivers/high_quality_daily_metabolism_with_covariates.rds.zip', 
 #     'data_ignored/high_quality_daily_metabolism_with_covariates.rds', 
 #     flags = '-rj9X')
@@ -117,6 +135,11 @@ sp_dat <- sp_dat %>% tibble() %>%
   select(site_name = Site_ID, COMID, VPU, Source, Lat, Lon, ndays, 
          nyears, StreamOrde, Azimuth, tree_height = TH, Width, ends_with('sum'),
          starts_with(c('ann', 'Wtemp', 'Disch', 'PAR', 'LAI')), MOD_ann_NPP)
+#sp_dat <- sp_dat %>% #POSSIBLE CORRECT VERSION IDENTIFIED BY MERGE CONFLICT
+#  filter(Source == 'USGS (Powell Center)') %>%
+#  select(site_name = Site_ID, COMID, VPU, ndays, nyears, StreamOrde, Azimuth, 
+#         tree_height = TH, Width, ends_with('sum'),
+#         starts_with(c('ann', 'Wtemp', 'Disch', 'PAR', 'LAI')), MOD_ann_NPP)
 
 # Remove sites that aren't streams and check for duplicates:
 pw_site_dat %>% filter(site_type != "ST") %>% select(site_name, long_name, site_type, lat, lon)

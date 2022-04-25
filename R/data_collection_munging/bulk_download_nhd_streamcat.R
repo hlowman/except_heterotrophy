@@ -332,8 +332,8 @@ query_streamcat_datasets('ripbuf')
 
 #construct vector of streamcat datasets to acquire (check variable list for deets)
 
-setlist2 = c('Elevation', 'PRISM_1981_2010', 'NLCD2011', 'NLCD2016', 'Runoff',
-             'ImperviousSurfaces', 'Dams', 'USCensus2010', 'EPA_FRS',
+setlist2 = c('Elevation', 'PRISM_1981_2010', 'NLCD2011', 'NLCD2016', 'Runoff', 
+             'ImperviousSurfaces2011', 'Dams', 'USCensus2010', 'EPA_FRS', #should this be just ImperviousSurfaces?
              'Lithology', 'RoadDensity', 'RoadStreamCrossings', 'NABD',
              'AgriculturalNitrogen', 'STATSGO_Set2', 'NADP', 'GeoChemPhys1',
              'GeoChemPhys2', 'GeoChemPhys3', 'BFI')
