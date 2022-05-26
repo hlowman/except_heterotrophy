@@ -9,9 +9,21 @@ library(glmnet)
 # load data
 # this subset contains only the siteyears that have decent data and coverage (according to Bernhardt 2022)
 dat <- read_csv('data_working/across_sites_model_data.csv')
+key <- read_csv('data_356rivers/streamcat_variablelist_quickreference.csv')
 d <- dat %>% filter(!is.na(Stream_PAR_sum), !is.na(PrecipWs)) %>%
   select(-NLCD_LUCat, -starts_with("IGBP"))
 summary(d)
+
+d %>%  
+  mutate(NEP = ann_GPP_C + ann_ER_C,
+         PR = -ann_GPP_C/ann_ER_C) %>%
+  ggplot(aes(ElevWs, log(ann_GPP_C), col = lat)) +
+  geom_point(size = 1) +
+  # scale_color_gradientn(colors = viridis::magma(5)) +
+  # xlab("GPP (g O2/m2/y)") + ylab("NEP (g O2/m2/y)") +
+  theme(legend.position = 'none') +
+  theme_minimal() 
+
 
 GPP <- log(d$ann_GPP_C)
 PR <- -d$ann_GPP_C/d$ann_ER_C
