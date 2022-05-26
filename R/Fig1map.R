@@ -10,6 +10,6 @@ riversiteyears_2<-riversiteyears %>% dplyr::select(site_name, year, lat, lon, an
 
 riversite<- riversiteyears_2 %>%  group_by(site_name, lat, lon)  %>% summarise(NEP=mean(NEP), PtoR=mean(PtoR), nyears = n())
 
-riversite<-write.csv("data_working/riversiteannual.csv")
+write.csv(riversite,"data_working\\riversite.csv", row.names = FALSE)
 
                                                                                
