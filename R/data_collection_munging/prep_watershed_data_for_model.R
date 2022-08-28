@@ -69,7 +69,7 @@ d <- mutate(d, Inorg_N_fert_kgNhayr = FertWs,
 d <- mutate(d, Dam_densityperkm2 = (DamDensWs + NABD_DensWs)/2,
             Dam_total_vol_m3km2 = (DamNIDStorWs + NABD_NIDStorWs)/2,
             Dam_normal_vol_m3km2 = (DamNrmStorWs + NABD_NrmStorWs)/2) %>%
-  select(-starts_with(c('Dam', 'NABD')))
+  select(-starts_with(c('DamN', 'DamD', 'NABD')))
 
 # Waste point srcs
 d <- mutate(d, Waste_point_srcs_perkm2 = SuperfundDensWs + NPDESDensWs + TRIDensWs) %>% 
@@ -132,3 +132,4 @@ glimpse(d)
 apply(d, 2, function(x) sum(is.na(x)))
 
 write_csv(d, 'data_working/across_sites_model_data.csv')
+
