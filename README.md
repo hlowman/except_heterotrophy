@@ -1,20 +1,4 @@
-<!--
-thank you "https://github.com/DouweHorsthuis/README-Template/blob/master/BLANK_README.md" for skeleton
--->
 # Autotrophy in Rivers
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-<!-- [![MIT License][license-shield]][license-url] -->
-<!-- [![LinkedIn][linkedin-shield]][linkedin-url] -->
-
-<br>
-<!-- <p align="center"> -->
-  <!-- <a href="https://github.com/MacroSHEDS/macrosheds/"> -->
-  <!--   <img src="images/logo.png" alt="macrosheds logo" width="160" height="80"> -->
-  <!-- </a>  -->
-<!-- <h3 align="center">MacroSheds</h3> -->
-<!-- <h4 align="center">MacroSheds unites stream and watershed data from myriad public datasets onto one platform, making it easy to epxlore the hydrology, water quality, and biogeochemistry of rivers across North America and beyond</h4> -->
 
 This Project is to study rivers that are exceptions to the long-standing dogma in stream ecology that streams tend to be heterotrophic, respiring organic carbon that they receive from upstream ecosystems. We are using data from a [USGS Powell Center Synthesis](https://www.sciencebase.gov/catalog/item/59eb9c0ae4b0026a55ffe389) that includes metabolism estimates for 356 streams throughout the United States. 
 
