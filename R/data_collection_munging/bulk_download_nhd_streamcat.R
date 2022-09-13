@@ -391,31 +391,31 @@ sites_nhd = arrange(sites_nhd, region, site_name)
 write_csv(sites_nhd, 'data_356rivers/watershed_summary_data.csv')
 
 
-# 4. get MODIS data (this section incomplete) ####
-# VNP13A1
-mt_bands("MOD13Q1")
-subset1 = mt_subset(product = "MOD13Q1",
-                    lat = 40,
-                    lon = -110,
-                    band = "250m_16_days_NDVI",
-                    start = "2004-01-01",
-                    end = "2004-02-01",
-                    km_lr = 10,
-                    km_ab = 10,
-                    site_name = "testsite",
-                    internal = TRUE,
-                    progress = FALSE)
-
-dfx = data.frame("site_name" = paste("test",1:2))
-dfx$lat = 40
-dfx$lon = -110
-
-# test batch download
-subsets = mt_batch_subset(dfx = dfx,
-                          product = "MOD11A2",
-                          band = "LST_Day_1km",
-                          internal = TRUE,
-                          start = "2004-01-01",
-                          end = "2004-02-01")
-
-
+# # 4. get MODIS data (this section incomplete) ####
+# # VNP13A1
+# mt_bands("MOD13Q1")
+# subset1 = mt_subset(product = "MOD13Q1",
+#                     lat = 40,
+#                     lon = -110,
+#                     band = "250m_16_days_NDVI",
+#                     start = "2004-01-01",
+#                     end = "2004-02-01",
+#                     km_lr = 10,
+#                     km_ab = 10,
+#                     site_name = "testsite",
+#                     internal = TRUE,
+#                     progress = FALSE)
+# 
+# dfx = data.frame("site_name" = paste("test",1:2))
+# dfx$lat = 40
+# dfx$lon = -110
+# 
+# # test batch download
+# subsets = mt_batch_subset(dfx = dfx,
+#                           product = "MOD11A2",
+#                           band = "LST_Day_1km",
+#                           internal = TRUE,
+#                           start = "2004-01-01",
+#                           end = "2004-02-01")
+# 
+# 

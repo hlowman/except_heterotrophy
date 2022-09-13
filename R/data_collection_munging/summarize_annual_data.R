@@ -1,7 +1,7 @@
 # Build dataframe with individual site year summaries paired with 
 # watershed data for all good coverage siteyears
 
-library(BernhardtMetabolism) # package from Bernhardt et al 2022
+library(BernhardtMetabolism) # package from Bernhardt et al 2022, install by downloading zip file from figshare datarelease
 library(stringr)
 library(tidyverse)
 # Summarize data from gapfilled years that have been filtered to have only 

@@ -69,8 +69,8 @@ nrow(HQdays[(HQdays$ER.lower < 0) & (HQdays$ER_raw > 0),])/
 
 
 # Data from Bernhardt et al 2022: ####
-# https://figshare.com/articles/software/Code_and_RDS_data_for_Bernhardt_et_al_2022_PNAS_/19074140?backTo=/collections/Data_and_code_for_Bernhardt_et_al_2022_PNAS_/5812160
 # Note, to get the lotic_standardized_full dataset 
+# https://figshare.com/articles/software/Code_and_RDS_data_for_Bernhardt_et_al_2022_PNAS_/19074140?backTo=/collections/Data_and_code_for_Bernhardt_et_al_2022_PNAS_/5812160
 sp <- readRDS('data_ignored/Bernhardt_2022/lotic_standardized_full.rds')
 sp <- map_dfr(sp, bind_rows) 
 
@@ -93,7 +93,7 @@ pw_hq <- HQdays %>%
   mutate(date = as.Date(date))
 
 # Powell center estimates complete with bernhardt covatiates
-sp_pw <- left_join(pw_hq, sp_sub, by = c('site_name', 'date')) %>%
+sp_pw <- full_join(pw_hq, sp_sub, by = c('site_name', 'date')) %>%
   mutate(K600 = case_when(!is.na(K600)~K600,
                           TRUE ~ K600_sp),
          year = lubridate::year(date)) %>%
@@ -110,11 +110,27 @@ dat <- read_csv('data_working/annual_summary_data.csv') %>%
 sp_pw_all <- left_join(sp_pw, dat, by = c('site_name', 'year'))
 sp_pw_sub <- right_join(sp_pw, dat, by = c('site_name', 'year'))
 
-summary(sp_pw_all)
+summary(sp_pw_sub)
+glimpse(sp_pw_sub)
+sp_pw_sub <- sp_pw_sub %>%
+  select(-ends_with('Rhat')) %>%
+  relocate(year, .after = date) %>%
+  relocate(c(GPP, GPP_filled), .after = GPP_raw) %>%
+  relocate(c(ER, ER_filled), .after = ER_raw) %>%
+  relocate(c(NEP, NEP_filled), .after = ER.upper)%>%
+  mutate(across(any_of(c('GPP.lower', 'GPP.upper')),
+                function(x) {x = case_when(is.na(GPP) ~ NA_real_,
+                                           TRUE ~ x); x}),
+         across(any_of(c('ER.lower', 'ER.upper')),
+                function(x) {x = case_when(is.na(ER) ~ NA_real_,
+                                           TRUE ~ x); x}),
+         across(any_of(c('K600.lower', 'K600.upper')),
+                function(x) {x = case_when(is.na(K600) ~ NA_real_,
+                                           TRUE ~ x); x}))
 
 
 # Save joined database
-saveRDS(sp_pw_all, 'data_ignored/high_quality_daily_metabolism_with_SP_covariates_complete.rds')
+# saveRDS(sp_pw_all, 'data_ignored/high_quality_daily_metabolism_with_SP_covariates_complete.rds')
 saveRDS(sp_pw_sub, 'data_356rivers/high_quality_daily_metabolism_with_SP_covariates.rds')
 # zip('data_356rivers/high_quality_daily_metabolism_with_covariates.rds.zip', 
 #     'data_ignored/high_quality_daily_metabolism_with_covariates.rds', 
