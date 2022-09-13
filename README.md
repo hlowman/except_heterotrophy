@@ -27,7 +27,7 @@ This Project is to study rivers that are exceptions to the long-standing dogma i
 <!-- Data 356 Rivers -->
 ### Data 356 Rivers
 
-**1. high_quality_daily_metabolism_with_SP_covariates.rds**  -  Daily metabolism estimates only for sites that meet the quality filtering requirements: 1) days with poor fits for GPP, ER, or K600 are removed, 1) site years with a high correlation between K600 and ER are removed.  
+**1. high_quality_daily_metabolism_with_SP_covariates.rds**  -  Daily metabolism estimates only for sites that meet the quality filtering requirements: 1) days with poor fits for GPP, ER, or K600 are removed, 2) site years with a high correlation between K600 and ER are removed. 3) site years with less than 60% coverage of high quality days were removed. Includes raw metabolism values, filtered values, and gap-filled values according to the Bernhardt 2022 workflow.  
 **2. watershed_summary_data.csv**  -  NHD and StreamCat data summarized for all Powell Center Synthesis and StreamPulse sites.  
 **3. streamcat_variablelist_quickreference.csv**  -  Reference list for streamcat variable names (found in watershed_summary_data.csv).  
 **4. site_data.tsv**  -  Metadata for Powell Center and StreamPulse sites.  
@@ -70,7 +70,7 @@ This Project is to study rivers that are exceptions to the long-standing dogma i
 <!-- Description of Dataset -->
 ### Description of Dataset
 
-**1. describe_plot_data.R**    
+**1. describe_plot_annual_timeseries.R**    
     - Descriptive summary of the complete site years  
     
 <!-- Researcher Constrained Model -->
