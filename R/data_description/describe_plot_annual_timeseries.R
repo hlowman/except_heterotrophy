@@ -56,7 +56,7 @@ aut <- dat %>%
  
 dev.off() 
 plot(aut$DOY, aut$GPP_cum, type = 'n',  xlab = 'Day of Year',
-     ylab = '', ylim = c(0, 6000))
+     ylab = '', ylim = c(0, 15000))
 mtext(expression(paste('GPP (g',O[2],m^{-2},d^{-1},')')), 2, 2.2)
 for(i in 1:nrow(aut_sites)){
     d <- aut %>% filter(siteyear == aut_sites$siteyear[i]) %>%
@@ -64,3 +64,43 @@ for(i in 1:nrow(aut_sites)){
     lines(d$DOY, d$GPP_cum, col = alpha('forestgreen', 0.5))
 
 }
+
+# How many UNIQUE sites?
+length(unique(aut_sites$site_name))
+
+#Distribution of cumulative(?) water temperature, discharge, PAR, GPP, ER
+aut_sites %>%
+  ggplot(aes(x=Wtemp)) +
+  geom_density()+
+  ggthemes::theme_few()
+
+aut_sites %>%
+  ggplot(aes(x=Disch)) +
+  geom_density() +
+  ggthemes::theme_few()
+
+aut_sites %>%
+  ggplot(aes(x=PAR)) +
+  geom_density() +
+  ggthemes::theme_few()
+
+aut_sites %>%
+  ggplot(aes(x=log10(GPP))) +
+  geom_density() +
+  ggthemes::theme_few()
+
+aut_sites %>%
+  ggplot(aes(x=log10(abs(ER)))) +
+  geom_density() +
+  ggthemes::theme_few()
+
+#How variable is water temp, discharge, PAR, GPP, ER at these sites?
+
+cv <- function(x) {
+  var <- sd(x)/mean(x)*100
+  return(var)
+}
+aut %>%
+  group_by(site_name, year) %>%
+  summarize(across(any_of(ends_with('filled')), cv))
+  
