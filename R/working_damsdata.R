@@ -73,16 +73,56 @@ vpu_from_point = function(lat, lon, CRS) {
   VPU = nhdR::find_vpu(ptc)
   return(VPU)
 }
+#this calculates how far along a reach any given point falls. That way when we pull in
+#watershed summary data for a reach, we can adjust it according to how much
+#of the total upstream area actually contributes to the point in question.
+# A value of 0 means upstream end; 1 means downstream end.
+# calc_reach_prop = function(VPU, COMID, lat, long, CRS, quiet=FALSE){
+#   
+#   if(! quiet){
+#     message(paste0('The nhdR package downloads NHDPlusV2 components to ',
+#                    nhdR:::nhd_path(), '. Unfortunately this cannot be changed.',
+#                    ' Fortunately, each component need only be downloaded once.'))
+#   }
+#   
+#   fl = nhdR::nhd_plus_load(vpu=VPU, component='NHDSnapshot',
+#                            dsn='NHDFlowline', approve_all_dl=TRUE)
+#   fl_etc = nhdR::nhd_plus_load(vpu=VPU, component='NHDPlusAttributes',
+#                                dsn='PlusFlowlineVAA', approve_all_dl=TRUE)
+#   
+#   colnames(fl)[colnames(fl) == 'ComID'] = 'COMID'
+#   colnames(fl)[colnames(fl) == 'ReachCode'] = 'REACHCODE'
+#   fl = fl[fl$COMID == COMID,]
+#   fl = left_join(fl, fl_etc[, c('ComID', 'ToMeas', 'FromMeas')],
+#                  by=c('COMID'='ComID'))
+#   
+#   pt = sf::st_point(c(long, lat))
+#   ptc = sf::st_sfc(pt, crs=CRS)
+#   ptct = sf::st_transform(ptc, crs=4269) #CRS for NAD 83
+#   x = try(suppressWarnings(nhdplusTools::get_flowline_index(fl, points=ptct)))
+#   if(inherits(x, 'try-error')) return(NA_real_)
+#   out = 1 - x$REACH_meas / 100 #0=upstream end; 1=downstream end
+#   
+#   return(out)
+# }
 
 dam_coords$CRS <- 'WGS84'
 dam_coords$COMID = NA_real_
 dam_coords$VPU = NA_character_
+# dam_coords$reach_prop <- NA_real_
 
 for(i in 1:nrow(dam_coords)){
   dam_coords$COMID[i] <- try(comid_from_point(dam_coords$lat[i],
                                               dam_coords$lon[i], WGS84))
   dam_coords$VPU[i] <- try(vpu_from_point(dam_coords$lat[i],
                                           dam_coords$lon[i], WGS84))
+  # x <- try(calc_reach_prop(dam_coords$VPU[i], dam_coords$COMID[i], 
+  #                          dam_coords$lat[i], dam_coords$lon[i], WGS84,
+  #                          quiet = TRUE))
+  # if(inherits(x, 'try-error')) x <- NA
+  # if(length(x)==0) x <- NA
+  # dam_coords$reach_proportion[i] <- x
+  # 
   if(i%%100 == 0)
     print(i/nrow(dam_coords))
 }
