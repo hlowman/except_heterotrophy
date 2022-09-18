@@ -387,7 +387,8 @@ sites_nhd = sites_nhd %>%
 sites_nhd = sites_nhd[! duplicated(sites_nhd$site_name),]
 
 #save yer data
-sites_nhd = arrange(sites_nhd, region, site_name)
+sites_nhd = arrange(sites_nhd, region, site_name) %>%
+  relocate(c('lat', 'lon'), .before = coord_datum)
 write_csv(sites_nhd, 'data_356rivers/watershed_summary_data.csv')
 
 

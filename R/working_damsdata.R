@@ -7,6 +7,7 @@ library(sp)
 library(rgdal)
 library(mapview)
 
+dam_coords <- read_csv('data_working/US_dams.csv')
 us_dams <- readOGR("C:/Users/cbarbosa/OneDrive - University of Wyoming/Datasets/US_dams/US_dams.shp",stringsAsFactor = F)
 watersheds <- read.csv("data_356rivers/watershed_summary_data.csv")
 
@@ -57,16 +58,15 @@ mapview(us_dams, color= "black") + mapview(watershed_summary_data_geo, color = "
 
 
 # site data must include latitude and longitude columns (decimal degrees)
-# dataframe generated from filter_powell_estimates scipt
-sites = read_tsv('data_356rivers/site_data.tsv')
-NAD83 = 4269 #EPSG code for coordinate reference system
-comid_from_point = function(lat, lon, CRS) {
-  pt = sf::st_point(c(lon, lat))
+WGS84 = 4326 #EPSG code for coordinate reference system
+comid_from_point = function(lat, long, CRS) {
+  pt = sf::st_point(c(long, lat))
   ptc = sf::st_sfc(pt, crs=CRS)
   COMID = nhdplusTools::discover_nhdplus_id(ptc)
   if(! length(COMID)) COMID = NA
   return(COMID)
 }
+
 vpu_from_point = function(lat, lon, CRS) {
   pt = sf::st_point(c(lon, lat))
   ptc = sf::st_sfc(pt, crs=CRS)
@@ -74,7 +74,19 @@ vpu_from_point = function(lat, lon, CRS) {
   return(VPU)
 }
 
-#COMID <- unlist(mapply(comid_from_point, watersheds$lat, watersheds$lon, NAD83))
+dam_coords$CRS <- 'WGS84'
+dam_coords$COMID = NA_real_
+dam_coords$VPU = NA_character_
 
-COMID <- unlist(mapply(comid_from_point, us_dams_latlon3$lat, us_dams_latlon3$lon, us_dams_latlon3$crs))
+for(i in 1:nrow(dam_coords)){
+  dam_coords$COMID[i] <- try(comid_from_point(dam_coords$lat[i],
+                                              dam_coords$lon[i], WGS84))
+  dam_coords$VPU[i] <- try(vpu_from_point(dam_coords$lat[i],
+                                          dam_coords$lon[i], WGS84))
+  if(i%%100 == 0)
+    print(i/nrow(dam_coords))
+}
+
+write_csv(dam_coords, 'data_working/US_dams.csv')
+# COMID <- unlist(mapply(comid_from_point, us_dams_latlon3$lat, us_dams_latlon3$lon, us_dams_latlon3$crs))
 
