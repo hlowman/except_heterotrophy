@@ -7,6 +7,7 @@ library(sp)
 library(rgdal)
 library(mapview)
 
+dam_coords <- read_csv('data_working/US_dams.csv')
 us_dams <- readOGR("C:/Users/cbarbosa/OneDrive - University of Wyoming/Datasets/US_dams/US_dams.shp",stringsAsFactor = F)
 watersheds <- read.csv("data_356rivers/watershed_summary_data.csv")
 
@@ -57,24 +58,75 @@ mapview(us_dams, color= "black") + mapview(watershed_summary_data_geo, color = "
 
 
 # site data must include latitude and longitude columns (decimal degrees)
-# dataframe generated from filter_powell_estimates scipt
-sites = read_tsv('data_356rivers/site_data.tsv')
-NAD83 = 4269 #EPSG code for coordinate reference system
-comid_from_point = function(lat, lon, CRS) {
-  pt = sf::st_point(c(lon, lat))
+WGS84 = 4326 #EPSG code for coordinate reference system
+comid_from_point = function(lat, long, CRS) {
+  pt = sf::st_point(c(long, lat))
   ptc = sf::st_sfc(pt, crs=CRS)
   COMID = nhdplusTools::discover_nhdplus_id(ptc)
   if(! length(COMID)) COMID = NA
   return(COMID)
 }
+
 vpu_from_point = function(lat, lon, CRS) {
   pt = sf::st_point(c(lon, lat))
   ptc = sf::st_sfc(pt, crs=CRS)
   VPU = nhdR::find_vpu(ptc)
   return(VPU)
 }
+#this calculates how far along a reach any given point falls. That way when we pull in
+#watershed summary data for a reach, we can adjust it according to how much
+#of the total upstream area actually contributes to the point in question.
+# A value of 0 means upstream end; 1 means downstream end.
+# calc_reach_prop = function(VPU, COMID, lat, long, CRS, quiet=FALSE){
+#   
+#   if(! quiet){
+#     message(paste0('The nhdR package downloads NHDPlusV2 components to ',
+#                    nhdR:::nhd_path(), '. Unfortunately this cannot be changed.',
+#                    ' Fortunately, each component need only be downloaded once.'))
+#   }
+#   
+#   fl = nhdR::nhd_plus_load(vpu=VPU, component='NHDSnapshot',
+#                            dsn='NHDFlowline', approve_all_dl=TRUE)
+#   fl_etc = nhdR::nhd_plus_load(vpu=VPU, component='NHDPlusAttributes',
+#                                dsn='PlusFlowlineVAA', approve_all_dl=TRUE)
+#   
+#   colnames(fl)[colnames(fl) == 'ComID'] = 'COMID'
+#   colnames(fl)[colnames(fl) == 'ReachCode'] = 'REACHCODE'
+#   fl = fl[fl$COMID == COMID,]
+#   fl = left_join(fl, fl_etc[, c('ComID', 'ToMeas', 'FromMeas')],
+#                  by=c('COMID'='ComID'))
+#   
+#   pt = sf::st_point(c(long, lat))
+#   ptc = sf::st_sfc(pt, crs=CRS)
+#   ptct = sf::st_transform(ptc, crs=4269) #CRS for NAD 83
+#   x = try(suppressWarnings(nhdplusTools::get_flowline_index(fl, points=ptct)))
+#   if(inherits(x, 'try-error')) return(NA_real_)
+#   out = 1 - x$REACH_meas / 100 #0=upstream end; 1=downstream end
+#   
+#   return(out)
+# }
 
-#COMID <- unlist(mapply(comid_from_point, watersheds$lat, watersheds$lon, NAD83))
+dam_coords$CRS <- 'WGS84'
+dam_coords$COMID = NA_real_
+dam_coords$VPU = NA_character_
+# dam_coords$reach_prop <- NA_real_
 
-COMID <- unlist(mapply(comid_from_point, us_dams_latlon3$lat, us_dams_latlon3$lon, us_dams_latlon3$crs))
+for(i in 1:nrow(dam_coords)){
+  dam_coords$COMID[i] <- try(comid_from_point(dam_coords$lat[i],
+                                              dam_coords$lon[i], WGS84))
+  dam_coords$VPU[i] <- try(vpu_from_point(dam_coords$lat[i],
+                                          dam_coords$lon[i], WGS84))
+  # x <- try(calc_reach_prop(dam_coords$VPU[i], dam_coords$COMID[i], 
+  #                          dam_coords$lat[i], dam_coords$lon[i], WGS84,
+  #                          quiet = TRUE))
+  # if(inherits(x, 'try-error')) x <- NA
+  # if(length(x)==0) x <- NA
+  # dam_coords$reach_proportion[i] <- x
+  # 
+  if(i%%100 == 0)
+    print(i/nrow(dam_coords))
+}
+
+write_csv(dam_coords, 'data_working/US_dams.csv')
+# COMID <- unlist(mapply(comid_from_point, us_dams_latlon3$lat, us_dams_latlon3$lon, us_dams_latlon3$crs))
 
