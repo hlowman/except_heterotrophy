@@ -32,3 +32,5 @@ data_raw
 data_ignored
 # bernhardt metabolism R package
 BernhardtMetabolism_0.1.1
+# local project todo list
+todo_autotrophy.txt
