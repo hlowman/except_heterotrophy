@@ -5,6 +5,7 @@ require('tidyverse')
 require('monomvn') 
 require('ggrepel')
 require('ggplot2') 
+require('patchwork')
 
 
 select <- dplyr::select
@@ -52,26 +53,29 @@ betas$ridge_beta = out_list_monomvn_ridge$betas
 #Do the models arrive at similar 'answers' e.g., which predictors are most important?
 
 #lasso vs susie
-betas %>%
+A<-betas %>%
   ggplot(aes(x=susie_beta,y=lasso_beta, label=predictor)) +
   geom_point()+
   geom_text_repel() +
   geom_abline(slope=1, intercept=0)
 
 #ridge vs susie
-betas %>%
+B<-betas %>%
   ggplot(aes(x=susie_beta,y=ridge_beta, label=predictor)) +
   geom_point()+
   geom_text_repel() +
   geom_abline(slope=1, intercept=0)
 
 #lasso vs ridge
-betas %>%
+C<-betas %>%
   ggplot(aes(x=ridge_beta,y=lasso_beta, label=predictor)) +
   geom_point()+
   geom_text_repel() +
   geom_abline(slope=1, intercept=0)
 
+png('figures/sparse_PR_comparison.png', width = 12, height = 6, units="in", dpi=600)
+A+B+C
+dev.off()
 
 # What do the predictions actually look like? -----------------------------
 
@@ -85,6 +89,7 @@ predictions$ridge_PR = out_list_monomvn_ridge$y.sim
 
 #Do the models arrive at similar 'answers' e.g., actual vs. predicted values?
 
+png('figures/sparse_PR_comparison.png', width = 12, height = 6, units="in", dpi=600)
 predictions %>%
   pivot_longer(-1) %>%
   ggplot(aes(x=value,y=PR_observed)) +
@@ -93,4 +98,4 @@ predictions %>%
   facet_wrap(~name)+
   xlim(0, 2)+
   ylim(0, 2)
-
+dev.off()
