@@ -49,7 +49,7 @@ betas$susie_beta = coef(out_list_susie)[-1]
 betas$lasso_beta = out_list_monomvn_lasso$betas
 betas$ridge_beta = out_list_monomvn_ridge$betas
 
-#Do the models arrive at similar 'answers'?
+#Do the models arrive at similar 'answers' e.g., which predictors are most important?
 
 #lasso vs susie
 betas %>%
@@ -71,3 +71,26 @@ betas %>%
   geom_point()+
   geom_text_repel() +
   geom_abline(slope=1, intercept=0)
+
+
+# What do the predictions actually look like? -----------------------------
+
+
+### Extract & store betas ###
+predictions <- data.frame(PR_observed=PR)
+predictions$susie_PR = out_list_susie$fitted
+predictions$lasso_PR = out_list_monomvn_lasso$y.sim
+predictions$ridge_PR = out_list_monomvn_ridge$y.sim
+
+
+#Do the models arrive at similar 'answers' e.g., actual vs. predicted values?
+
+predictions %>%
+  pivot_longer(-1) %>%
+  ggplot(aes(x=value,y=PR_observed)) +
+  geom_point()+
+  geom_abline(slope=1, intercept=0)+
+  facet_wrap(~name)+
+  xlim(0, 2)+
+  ylim(0, 2)
+
