@@ -6,8 +6,12 @@ library(nhdR)
 library(sp)
 library(rgdal)
 library(mapview)
+library(foreign)
 
-dam_coords <- read_csv('data_working/US_dams.csv')
+# dam_coords <- read_csv('data_working/US_dams.csv')
+dam_coords <- foreign::read.dbf('data_ignored/nabd_fish_barriers_2012.dbf') %>%
+  as_tibble() %>%
+  rename(lon = newX, lat = newY)
 us_dams <- readOGR("C:/Users/cbarbosa/OneDrive - University of Wyoming/Datasets/US_dams/US_dams.shp",stringsAsFactor = F)
 watersheds <- read.csv("data_356rivers/watershed_summary_data.csv")
 
@@ -78,7 +82,7 @@ vpu_from_point = function(lat, lon, CRS) {
 #of the total upstream area actually contributes to the point in question.
 # A value of 0 means upstream end; 1 means downstream end.
 calc_reach_prop = function(VPU, COMID, lat, long, CRS, quiet=FALSE){
-
+  
   if(! quiet){
     message(paste0('The nhdR package downloads NHDPlusV2 components to ',
                    nhdR:::nhd_path(), '. Unfortunately this cannot be changed.',
@@ -89,45 +93,65 @@ calc_reach_prop = function(VPU, COMID, lat, long, CRS, quiet=FALSE){
                            dsn='NHDFlowline', approve_all_dl=TRUE)
   fl_etc = nhdR::nhd_plus_load(vpu=VPU, component='NHDPlusAttributes',
                                dsn='PlusFlowlineVAA', approve_all_dl=TRUE)
-
+  
   colnames(fl)[colnames(fl) == 'ComID'] = 'COMID'
   colnames(fl)[colnames(fl) == 'ReachCode'] = 'REACHCODE'
   fl = fl[fl$COMID == COMID,]
   fl = left_join(fl, fl_etc[, c('ComID', 'ToMeas', 'FromMeas')],
                  by=c('COMID'='ComID'))
-
+  
   pt = sf::st_point(c(long, lat))
   ptc = sf::st_sfc(pt, crs=CRS)
   ptct = sf::st_transform(ptc, crs=4269) #CRS for NAD 83
-  x = try(suppressWarnings(nhdplusTools::get_flowline_index(fl, points=ptct)))
-  if(inherits(x, 'try-error')) return(NA_real_)
+  x = suppressWarnings(nhdplusTools::get_flowline_index(fl, points=ptct))
   out = 1 - x$REACH_meas / 100 #0=upstream end; 1=downstream end
-
+  
   return(out)
 }
 
-dam_coords$CRS <- 'WGS84'
-dam_coords$COMID = NA_real_
+VPU = dam_coords$VPU[i]
+COMID = dam_coords$COMID[i]
+lat = dam_coords$lat[i]
+long = dam_coords$lon[i]
+CRS = WGS84
+COMID = comid_from_point(dam_coords$lat[i], dam_coords$lon[i], WGS84)
+# dam_coords$CRS <- 'WGS84'
+# dam_coords$COMID = NA_real_
 dam_coords$VPU = NA_character_
+dam_coords$reach_proportion <- NA_real_
+
+nhdR:::nhd_path(temporary = FALSE)
+Sys.setenv(nhdR_path = "C:\\Users\\alice.carter\\git\\data\\nhd_files")
 
 for(i in 1:nrow(dam_coords)){
-  dam_coords$COMID[i] <- try(comid_from_point(dam_coords$lat[i],
-                                              dam_coords$lon[i], WGS84))
-  dam_coords$VPU[i] <- try(vpu_from_point(dam_coords$lat[i],
-                                          dam_coords$lon[i], WGS84))
-  x <- try(calc_reach_prop(dam_coords$VPU[i], dam_coords$COMID[i],
-                           dam_coords$lat[i], dam_coords$lon[i], WGS84,
-                           quiet = TRUE))
-  if(inherits(x, 'try-error')) x <- NA
-  if(length(x)==0) x <- NA
-  dam_coords$reach_proportion[i] <- x
+    dam_coords$VPU[i] <- try(vpu_from_point(dam_coords$lat[i],
+                                            dam_coords$lon[i], WGS84))
+    x <- try(calc_reach_prop(dam_coords$VPU[i], dam_coords$COMID[i],
+                             dam_coords$lat[i], dam_coords$lon[i], WGS84,
+                             quiet = TRUE))
+    if(inherits(x, 'try-error')) x <- NA
+    if(length(x)==0) x <- NA
 
-  if(i%%100 == 0)
-    print(i/nrow(dam_coords))
+    if(is.na(x)){ # if the reach proportion cannot be calculated, double check that the comid is correct and try again
+        comid <- try(comid_from_point(dam_coords$lat[i],
+                                      dam_coords$lon[i], WGS84))
+        if(!is.na(comid)) {
+            dam_coords$COMID[i] <- comid
+            x <- try(calc_reach_prop(dam_coords$VPU[i], dam_coords$COMID[i],
+                                     dam_coords$lat[i], dam_coords$lon[i], WGS84,
+                                     quiet = TRUE))
+            if(inherits(x, 'try-error')) x <- NA
+            if(length(x)==0) x <- NA
+        }
+    }
+    dam_coords$reach_proportion[i] <- x
+
+    if(i%%100 == 0)
+      print(i/nrow(dam_coords))
 }
 
-# if the reach proportion cannot be calculated, assume the entire reach is included
-dam_coords$reach_proportion[is.na(dam_coords$reach_proportion)] <- 1
-write_csv(dam_coords, 'data_working/US_dams.csv')
+ # if the reach proportion cannot be calculated, assume the entire reach is included
+# dam_coords$reach_proportion[is.na(dam_coords$reach_proportion)] <- 1
+write_csv(dam_coords, 'data_ignored/nabd_dams.csv')
 # COMID <- unlist(mapply(comid_from_point, us_dams_latlon3$lat, us_dams_latlon3$lon, us_dams_latlon3$crs))
 
