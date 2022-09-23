@@ -13,14 +13,19 @@ sites <- read_csv('data_356rivers/watershed_summary_data.csv')
 
 # functions for working with dams dataset:
 
-a <- nhdplusTools::map_nhdplus(outlets = list(sites$COMID[1]), 
+a <- nhdplusTools::map_nhdplus(outlets = list(COMID),#dam_coords$COMID[i]),
                                flowline_only = TRUE)
-mapview::mapview(a$flowline) +
-    mapview(tmp$geometry)
+flowline <- nhdplusTools::navigate_nldi(list(featureSource = 'comid',
+                                             featureID = COMID),
+                                        mode = 'upstreamTributaries',
+                                        data_source = '')
+st_as_sf(dam_coords[i,], coords = c('lon', 'lat'), crs = WGS84) %>%
+  mapview::mapview()+ 
+  mapview::mapview(flowline)
 
 subset_dams_in_network <- function(COMID, dams){
   
-    data = nhdR::nhd_plus_load(vpu = sites$VPU[1], 
+    data = nhdR::nhd_plus_load(vpu =VPU, 
                                component = 'NHDPlusAttributes',
                                dsn = 'PlusFlowlineVAA',
                                approve_all_dl=TRUE)
