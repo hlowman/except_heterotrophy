@@ -24,6 +24,14 @@ d %>%
   theme(legend.position = 'none') +
   theme_minimal() 
 
+d %>%  
+  mutate(NEP = ann_GPP_C + ann_ER_C,
+         PR = -ann_GPP_C/ann_ER_C) %>%
+  ggplot(aes(ElevWs, PR, col = lat)) +
+  geom_point(size = 1) +
+  theme(legend.position = 'none') +
+  theme_minimal() 
+
 
 GPP <- log(d$ann_GPP_C)
 PR <- -d$ann_GPP_C/d$ann_ER_C
