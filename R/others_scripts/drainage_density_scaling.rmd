@@ -1,0 +1,86 @@
+---
+title: "Drainage Density"
+output: html_document
+date: '2022-10-01'
+author: 'Alice Carter'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+sites <- read_csv('../../data_356rivers/watershed_summary_data.csv')
+```
+
+Drainage density is the total stream length per unit area in a watershed:
+
+$$ D = \frac{\sum{L}}{A}  $$
+
+This metric may be useful to represent the connectivity of a stream to the terrestrial ecosystem carbon cycle. Higher drainage density would suggest that there is more exposed surface waters per unit area of terrestrial ecosystem. If we only include *connected stream length* to do this calculation, (ie we exclude sections of stream that are upstream of flow ubstructions), then the drainage density would decrease in a watershed where there are large areas disconnected from the stream by flow impoundments. Below, we explore how this metric behaves with other watershed properties. 
+
+Horton developed a scaling relationship between stream length ($L$) and watershed Area ($A$)  
+
+$$ L = 1.27 A^{0.6} $$
+This relationship implies that in a watershed that is 1 km squared, we would expect 1.27 kms of stream channel. 
+
+To understand how drainage density scales with watershed area we can calculate $D$ in terms of $A$:
+
+$$ D = \frac{\sum{L}}{A} = \frac{1.27 A^{0.6}}{A} = 1.27 A^{-0.4} $$
+
+So we see that drainage density decreases proportional to the log of watershed area.   
+```{r, echo = FALSE}
+A = seq(from = 0.1 , to = 500000, length.out = 100)
+D = 1.27 * A^ -0.4
+
+plot(A, D, log = 'xy', type = 'l', #xlim = c(0.1,5000), #ylim = c(0.1,3000),
+     xlab = 'Area (km2)', ylab = 'Drainage Density (km-1)')
+points(sites$NHD_TOTDASQKM_corr, sites$drainage_density, pch = 20)
+points(sites$NHD_TOTDASQKM_corr, sites$drainage_density_connected)
+
+legend('bottomleft',
+       legend = c('theoretical', 'sites', 'corrected for dams'),
+       pch = c(NA, 20, 1), lty = c(1,NA, NA))
+
+```
+
+This makes sense as we expect stream reaches farther down in a watershed to be less connected to the terrestrial system and more controlled by internal dynamics. 
+
+Drainage density also covaries with flow characteristics. Higher drainage densities predict lower average baseflow ($Q_b$) and higher storm flow ($Q_f$)
+
+$$Q_b \propto D^{-2}$$
+$$Q_f \propto D^{2}$$
+
+```{r, echo = FALSE}
+
+Qb = D ^(-2)
+Qf = D ^2
+
+par(mfrow = c(1,2), 
+    mar = c(4,2,1,1),
+    oma = c(2,4,1,1))
+
+plot(Qb, D, log = 'xy', type = 'l',
+     xlab = 'Qb, baseflow')
+mtext('Drainage Density (km-1)', 2, 3)
+plot(Qf, D, log = 'xy', type = 'l',
+     xlab = 'Qf, stormflow', ylab = '')
+
+```
+
+This means that in a watershed with higher drainage density, we would expect not only greater connectivity with the terrestrial ecosystem, but also higher disturbance. 
+
+Finally, drainage density scales with other watershed characteristics. Montgomery and Dietrich (1989) determined this equation for drainage density:
+
+$$D = \frac{w_s \rho_w R_0}{W \rho_s K_z sin \theta cos \theta} \left[ 1 - \frac{tan \theta}{tan \psi} \right]^{-1} $$
+I'll just define the relevant quantities:  
+- $R_0$ is average precip, so $D \propto precip$  
+- $\rho_s$ is the bulk density of the soil, so $D \propto \rho_s^{-1}$  
+- $K_z$ is the hydraulic conductivity, so $D \propto K_z^{-1}$  
+
+This means that drainage density will increase linearly with precipitation, meaning more connectivity with terrestrial ecosystem.
+```{r, echo = FALSE}
+
+plot(sites$PrecipWs/max(sites$PrecipWs, na.rm = T), sites$drainage_density,
+     ylim = c(0,2), pch = 20 , xlab = 'Precipitation', ylab = 'Drainage Density')
+abline(0.2,1)
+
+```
