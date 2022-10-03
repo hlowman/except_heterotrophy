@@ -130,7 +130,7 @@ predictions$ridge_PR = out_list_monomvn_ridge$y.sim
 png('figures/sparse_prediction_comparison.png', width = 12, height = 6, units="in", res=600)
 predictions %>%
   pivot_longer(-1) %>%
-  ggplot(aes(x=exp(value),y=exp(PR_observed))) + #transform from log10 scale
+  ggplot(aes(x=10^(value),y=10^(PR_observed))) + #back-transform 
   geom_point(shape=21,fill="white",color="black",alpha=0.3)+
   geom_abline(slope=1, intercept=0)+
   facet_wrap(~name)+
@@ -146,14 +146,147 @@ dev.off()
 # Subsample of heterotrophic sites ----------------------------------------
 
 
+#if P:R > 1 then the site is net autotrophic
+
+d <- d %>%
+  mutate(PR = -ann_GPP_C/ann_ER_C) %>%
+  mutate(PR_cat = case_when(
+    PR < 1 ~ "heterotrophic",
+    PR >= 1 ~ "autotrophic"
+  ))
+
+#how many of each site type?
+d %>%
+  group_by(PR_cat) %>%
+  count()
+
+# What if we randomly sample ~255 heterotrophic sites,
+# so about 1/3 are net autotrophic, 2/3 are net heterotrophic
+
+d_subsampled <- d %>%
+  filter(PR_cat=="heterotrophic") %>%
+  sample_n(255) %>%
+  bind_rows(., d %>% filter(PR_cat=="autotrophic"))
+         
+#double check that it worked
+d_subsampled %>%
+  group_by(PR_cat) %>%
+  count()
+
+
 #Response
-PR <- -d$ann_GPP_C/d$ann_ER_C
+PR <- log10(-d_subsampled$ann_GPP_C/d_subsampled$ann_ER_C) 
 
 hist(PR)
 
 #Predictors
-preds <- select(d, -site_name, -year, -ann_GPP_C, -ann_ER_C) %>% 
+preds <- select(d_subsampled, -PR_cat, -PR, -site_name, -year, -ann_GPP_C, -ann_ER_C) %>% 
   mutate(across(everything(), scale))
 X <- as.matrix(preds)
+
+#And now re-run the script from above
+
+# First run the models with all sites -------------------------------------
+
+
+out_list_monomvn_lasso <- monomvn_function(X, PR, method='lasso', revjump = T, training_perc = 1)
+out_list_monomvn_ridge <- monomvn_function(X, PR, method='ridge', revjump = T, training_perc = 1)
+out_list_susie <-susie(X,PR, L = 10,max_iter = 1000)
+
+
+### Extract & store betas ###
+betas <- data.frame(predictor = colnames(preds))
+betas$susie_beta = coef(out_list_susie)[-1]
+betas$lasso_beta = out_list_monomvn_lasso$betas
+betas$ridge_beta = out_list_monomvn_ridge$betas
+
+#Do the models arrive at similar 'answers' e.g., which predictors are most important?
+
+#lasso vs susie
+A<-betas %>%
+  ggplot(aes(x=susie_beta,y=lasso_beta, label=predictor)) +
+  geom_point()+
+  geom_text_repel() +
+  geom_abline(slope=1, intercept=0)
+
+#ridge vs susie
+B<-betas %>%
+  ggplot(aes(x=susie_beta,y=ridge_beta, label=predictor)) +
+  geom_point()+
+  geom_text_repel() +
+  geom_abline(slope=1, intercept=0)
+
+#lasso vs ridge
+C<-betas %>%
+  ggplot(aes(x=ridge_beta,y=lasso_beta, label=predictor)) +
+  geom_point()+
+  geom_text_repel() +
+  geom_abline(slope=1, intercept=0)
+
+png('figures/sparse_PR_comparison_subsampled_heterotrophic_sites.png', width = 12, height = 6, units="in", res=600)
+A+B+C + plot_annotation(title="Comparison of beta coefficients") & theme_few()
+dev.off()
+
+#Draw same graphs as above, but filter our very small betas
+
+#lasso vs susie
+A<-betas %>%
+  filter(susie_beta > 0.01) %>%
+  filter(lasso_beta > 0.01) %>%
+  ggplot(aes(x=susie_beta,y=lasso_beta, label=predictor)) +
+  geom_point()+
+  geom_text_repel() +
+  geom_abline(slope=1, intercept=0)
+
+#ridge vs susie
+B<-betas %>%
+  filter(susie_beta > 0.01) %>%
+  filter(ridge_beta > 0.01) %>%
+  ggplot(aes(x=susie_beta,y=ridge_beta, label=predictor)) +
+  geom_point()+
+  geom_text_repel() +
+  geom_abline(slope=1, intercept=0)
+
+#lasso vs ridge
+C<-betas %>%
+  filter(lasso_beta > 0.01) %>%
+  filter(ridge_beta > 0.01) %>%
+  ggplot(aes(x=ridge_beta,y=lasso_beta, label=predictor)) +
+  geom_point()+
+  geom_text_repel() +
+  geom_abline(slope=1, intercept=0)
+  
+  
+png('figures/sparse_PR_comparison_nonZeroBetas_subsampled_heterotrophic_sites.png', width = 12, height = 6, units="in", res=600)
+A+B+C+ plot_annotation(title="Subsample 255 heterotrophic sites; Filter out betas close to zero")& theme_few()
+dev.off()
+
+# What do the predictions actually look like? -----------------------------
+
+
+### Extract & store betas ###
+predictions <- data.frame(PR_observed=PR)
+predictions$susie_PR = out_list_susie$fitted
+predictions$lasso_PR = out_list_monomvn_lasso$y.sim
+predictions$ridge_PR = out_list_monomvn_ridge$y.sim
+
+
+#Do the models arrive at similar 'answers' e.g., actual vs. predicted values?
+
+png('figures/sparse_prediction_comparison_subsampled_heterotrophic_sites.png', width = 12, height = 6, units="in", res=600)
+predictions %>%
+  pivot_longer(-1) %>%
+  ggplot(aes(x=10^(value),y=10^(PR_observed))) + #back-transform 
+  geom_point(shape=21,fill="white",color="black",alpha=0.3)+
+  geom_abline(slope=1, intercept=0)+
+  facet_wrap(~name)+
+  # xlim(0, 2)+
+  # ylim(0, 2)+
+  theme_few()+
+  labs(y="Observed",
+       x="Predicted",
+       title="Observed versus predicted for select sparse models",
+       subtitle="Subsample 255 heterotrophic sites (85 autotrophic)")
+dev.off()
 
 
