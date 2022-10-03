@@ -1,7 +1,5 @@
 ## Compiled by IAO 2022-09-20 with scripts from the Modelscape sparse modeling group
 
-
-
 if (!require('pacman')) install.packages('pacman'); library('pacman')
 
 pacman::p_load("susieR",
@@ -23,7 +21,9 @@ d <- dat %>% filter(!is.na(Stream_PAR_sum), !is.na(PrecipWs)) %>%
 summary(d)
 
 #Response
-PR <- -d$ann_GPP_C/d$ann_ER_C
+PR <- log10(-d$ann_GPP_C/d$ann_ER_C)
+
+hist(PR)
 
 #Predictors
 preds <- select(d, -site_name, -year, -ann_GPP_C, -ann_ER_C) %>% 
@@ -85,8 +85,8 @@ dev.off()
 
 #lasso vs susie
 A<-betas %>%
-  filter(susie_beta > 0.01) %>%
-  filter(lasso_beta > 0.01) %>%
+  filter(susie_beta > 0.001) %>%
+  filter(lasso_beta > 0.001) %>%
   ggplot(aes(x=susie_beta,y=lasso_beta, label=predictor)) +
   geom_point()+
   geom_text_repel() +
@@ -94,8 +94,8 @@ A<-betas %>%
 
 #ridge vs susie
 B<-betas %>%
-  filter(susie_beta > 0.01) %>%
-  filter(ridge_beta > 0.01) %>%
+  filter(susie_beta > 0.001) %>%
+  filter(ridge_beta > 0.001) %>%
   ggplot(aes(x=susie_beta,y=ridge_beta, label=predictor)) +
   geom_point()+
   geom_text_repel() +
@@ -130,14 +130,30 @@ predictions$ridge_PR = out_list_monomvn_ridge$y.sim
 png('figures/sparse_prediction_comparison.png', width = 12, height = 6, units="in", res=600)
 predictions %>%
   pivot_longer(-1) %>%
-  ggplot(aes(x=value,y=PR_observed)) +
+  ggplot(aes(x=exp(value),y=exp(PR_observed))) + #transform from log10 scale
   geom_point(shape=21,fill="white",color="black",alpha=0.3)+
   geom_abline(slope=1, intercept=0)+
   facet_wrap(~name)+
-  xlim(0, 2)+
-  ylim(0, 2)+
+  # xlim(0, 2)+
+  # ylim(0, 2)+
   theme_few()+
   labs(y="Observed",
        x="Predicted",
        title="Observed versus predicted for select sparse models")
 dev.off()
+
+
+# Subsample of heterotrophic sites ----------------------------------------
+
+
+#Response
+PR <- -d$ann_GPP_C/d$ann_ER_C
+
+hist(PR)
+
+#Predictors
+preds <- select(d, -site_name, -year, -ann_GPP_C, -ann_ER_C) %>% 
+  mutate(across(everything(), scale))
+X <- as.matrix(preds)
+
+
