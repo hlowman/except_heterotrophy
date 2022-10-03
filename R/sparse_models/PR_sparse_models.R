@@ -1,12 +1,16 @@
 ## Compiled by IAO 2022-09-20 with scripts from the Modelscape sparse modeling group
 
-require('susieR')
-require('tidyverse')
-require('monomvn') 
-require('ggrepel')
-require('ggplot2') 
-require('patchwork')
 
+
+if (!require('pacman')) install.packages('pacman'); library('pacman')
+
+pacman::p_load("susieR",
+               "tidyverse",
+               "monomvn",
+               "ggrepel",
+               "patchwork",
+               "Metrics",
+               "ggthemes")
 
 select <- dplyr::select
 
@@ -73,8 +77,42 @@ C<-betas %>%
   geom_text_repel() +
   geom_abline(slope=1, intercept=0)
 
-png('figures/sparse_PR_comparison.png', width = 12, height = 6, units="in", dpi=600)
-A+B+C
+png('figures/sparse_PR_comparison.png', width = 12, height = 6, units="in", res=600)
+A+B+C + plot_annotation(title="Comparison of beta coefficients") & theme_few()
+dev.off()
+
+#Draw same graphs as above, but filter our very small betas
+
+#lasso vs susie
+A<-betas %>%
+  filter(susie_beta > 0.01) %>%
+  filter(lasso_beta > 0.01) %>%
+  ggplot(aes(x=susie_beta,y=lasso_beta, label=predictor)) +
+  geom_point()+
+  geom_text_repel() +
+  geom_abline(slope=1, intercept=0)
+
+#ridge vs susie
+B<-betas %>%
+  filter(susie_beta > 0.01) %>%
+  filter(ridge_beta > 0.01) %>%
+  ggplot(aes(x=susie_beta,y=ridge_beta, label=predictor)) +
+  geom_point()+
+  geom_text_repel() +
+  geom_abline(slope=1, intercept=0)
+
+#lasso vs ridge
+C<-betas %>%
+  filter(lasso_beta > 0.01) %>%
+  filter(ridge_beta > 0.01) %>%
+  ggplot(aes(x=ridge_beta,y=lasso_beta, label=predictor)) +
+  geom_point()+
+  geom_text_repel() +
+  geom_abline(slope=1, intercept=0)+
+  
+
+png('figures/sparse_PR_comparison_nonZeroBetas.png', width = 12, height = 6, units="in", res=600)
+A+B+C+ plot_annotation(title="Filter out betas close to zero")& theme_few()
 dev.off()
 
 # What do the predictions actually look like? -----------------------------
@@ -89,13 +127,17 @@ predictions$ridge_PR = out_list_monomvn_ridge$y.sim
 
 #Do the models arrive at similar 'answers' e.g., actual vs. predicted values?
 
-png('figures/sparse_PR_comparison.png', width = 12, height = 6, units="in", dpi=600)
+png('figures/sparse_prediction_comparison.png', width = 12, height = 6, units="in", res=600)
 predictions %>%
   pivot_longer(-1) %>%
   ggplot(aes(x=value,y=PR_observed)) +
-  geom_point()+
+  geom_point(shape=21,fill="white",color="black",alpha=0.3)+
   geom_abline(slope=1, intercept=0)+
   facet_wrap(~name)+
   xlim(0, 2)+
-  ylim(0, 2)
+  ylim(0, 2)+
+  theme_few()+
+  labs(y="Observed",
+       x="Predicted",
+       title="Observed versus predicted for select sparse models")
 dev.off()
