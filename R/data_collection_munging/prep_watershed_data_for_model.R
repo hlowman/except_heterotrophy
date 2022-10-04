@@ -7,6 +7,7 @@ library(tidyverse)
 # load data
 # this subset contains only the siteyears that have decent data and coverage (according to Bernhardt 2022)
 dat <- read_csv('data_working/annual_summary_data.csv')
+ws_dat <- read_csv('data_356rivers/watershed_summary_data.csv')
 
 # Condense categories and subset to useful columns ####
 # Combine streamcat similar land use categories:
@@ -129,6 +130,11 @@ w <- which(apply(d, 1, function(x) sum(is.na(x))) >50)
 d <- d[-w,] 
 
 glimpse(d)
+glimpse(ws_dat)
+
+d <- left_join(d, select(ws_dat, site_name, ends_with('flow_length'), 
+                            starts_with('drainage_density')))
+
 apply(d, 2, function(x) sum(is.na(x)))
 
 write_csv(d, 'data_working/across_sites_model_data.csv')
