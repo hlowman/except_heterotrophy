@@ -17,7 +17,8 @@ dd <- dat %>%
            !is.infinite(drainage_density_connected),
            !is.na(Stream_PAR_sum), 
            !is.na(MOD_ann_NPP)) %>%
-    select(site_name, PR, NEP, drainage_density_connected, Stream_PAR_sum,
+    select(site_name, ER = ann_ER_C, GPP = ann_GPP_C, PR, NEP, 
+           drainage_density_connected, Stream_PAR_sum,
            MOD_ann_NPP, Disch_cv) %>%
     mutate(log_PR = log(PR),
            across(-site_name, ~scale(.)[, 1]))
@@ -25,13 +26,13 @@ dd <- dat %>%
 b <- brm(log_PR ~ Stream_PAR_sum + MOD_ann_NPP + drainage_density_connected + 
       (1|site_name), data = dd)
 
-b <- brm(NEP ~ Stream_PAR_sum + MOD_ann_NPP + drainage_density_connected + 
+b_NEP <- brm(NEP ~ Stream_PAR_sum + MOD_ann_NPP + drainage_density_connected + 
       (1|site_name), data = dd)
 
-l <- lmer(log_PR ~ Stream_PAR_sum + MOD_ann_NPP + 
+l <- lmer(-ER ~ Stream_PAR_sum + MOD_ann_NPP + 
             drainage_density_connected + (1|site_name), data = dd)
 
-l <- lmer(NEP ~ Stream_PAR_sum + MOD_ann_NPP + 
+l_nep <- lmer(NEP ~ Stream_PAR_sum + MOD_ann_NPP + 
             drainage_density_connected + (1|site_name), data = dd)
 
 summary(l)

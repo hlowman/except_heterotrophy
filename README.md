@@ -61,7 +61,12 @@ This Project is to study rivers that are exceptions to the long-standing dogma i
     - Downloads NHD covariates  
     - Downloads StreamCat covariates   
     
-**4. prep_watershed_data_for_model.R**  
+**4. baseflow_separation_calc_Q_metrics.R **
+    - uses FlowScreen to separate baseflow based on the Eckhardt Method
+    - contains an analysis of different baseflow index thresholds for calculating interstorm intervals
+    - calculated max and median interstorm interval for each siteyear
+    
+**5. prep_watershed_data_for_model.R**  
     - Condenses streamcat and NHD variables into categories (eg. %Urban-high, %Urban-mid, and %Urban-low all combine to become %Urban). See script for specific combinations.  
     - Assigns temporally changing variables to site years based on most recent data availability (eg. 2011 - 2015 years get %Urban2011, years 2016 and on get %Urban2016).  
     - Generates the across_sites_model_data.csv file which will be used for model building.  

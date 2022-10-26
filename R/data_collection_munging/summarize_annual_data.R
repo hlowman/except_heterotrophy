@@ -11,13 +11,13 @@ lotic_gap_filled <- readRDS('data_ignored/Bernhardt_2022/lotic_gap_filled.rds')
 lotic_siteyears <- lapply(lotic_gap_filled, function(x) group_split(x, Year))
 
 lotic_siteyears_split <- unlist(lotic_siteyears, recursive = F, use.names = T)
-names(lotic_siteyears_split) <- 
-  sapply(lotic_siteyears_split, 
+names(lotic_siteyears_split) <- sapply(lotic_siteyears_split, 
          function(x) paste(x$Site_ID[1], x$Year[1], sep = "_"))
 
 lotic_siteyears_split <- lapply(lotic_siteyears_split, as.data.frame)
 
 metrics_compiled <- data.frame()
+
 
 for(i in 1:length(lotic_siteyears_split)){
   newrow <- BernhardtMetabolism::calc_site_metrics(names(lotic_siteyears_split)[i], 
@@ -31,6 +31,7 @@ for(i in 1:length(lotic_siteyears_split)){
 write_csv(metrics_compiled, 
           'data_ignored/Bernhardt_2022/lotic_gap_filled_annual_summaries.csv')
 
+metrics_compiled <- read_csv('data_ignored/Bernhardt_2022/lotic_gap_filled_annual_summaries.csv')
 # Combine with Watershed Characteristics:
 ws <- read_csv('data_356rivers/watershed_summary_data.csv')
 
