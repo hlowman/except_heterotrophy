@@ -8,6 +8,8 @@ library(tidyverse)
 # this subset contains only the siteyears that have decent data and coverage (according to Bernhardt 2022)
 dat <- read_csv('data_working/annual_summary_data.csv')
 ws_dat <- read_csv('data_356rivers/watershed_summary_data.csv')
+storms <- read_csv('data_ignored/annual_interstorm_intervals.csv') %>%
+  rename(site_name = Site_ID, year = Year) %>% select(-bfi_threshold)
 
 # Condense categories and subset to useful columns ####
 # Combine streamcat similar land use categories:
@@ -134,6 +136,8 @@ glimpse(ws_dat)
 
 d <- left_join(d, select(ws_dat, site_name, ends_with('flow_length'), 
                             starts_with('drainage_density')))
+
+d <- left_join(d, storms)
 
 apply(d, 2, function(x) sum(is.na(x)))
 
