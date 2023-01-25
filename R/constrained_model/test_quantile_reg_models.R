@@ -8,14 +8,9 @@ library(corrplot)
 
 dat <- read_csv('data_working/across_sites_model_data.csv')
 
-dat$PR = -dat$ann_GPP_C/dat$ann_ER_C
-dat$NEP = dat$ann_GPP_C + dat$ann_ER_C
-
 # filter dataframe to remove NA's in the relevant variables:
 dd <- dat %>%
-    mutate(width_to_area = Width/sqrt(ws_area_km2),
-           width_to_area = ifelse(width_to_area > 20, NA, width_to_area ))%>%
-    select(site_name, ER = ann_ER_C, GPP = ann_GPP_C, PR, NEP, 
+    select(site_name, ER = ann_ER_C, GPP = ann_GPP_C, PR, NEP = ann_NEP_C, 
            drainage_density_connected, drainage_density, Stream_PAR_sum,
            MOD_ann_NPP, PrecipWs,# precip_runoff_ratio, 
            Disch_cv, max_interstorm, ws_area_km2, 
