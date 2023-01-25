@@ -141,5 +141,14 @@ d <- left_join(d, storms)
 
 apply(d, 2, function(x) sum(is.na(x)))
 
+d <- d %>%
+  mutate(PR = -ann_GPP_C/ann_ER_C,
+         ann_NEP_C = ann_GPP_C + ann_ER_C,
+         width_to_area = Width/sqrt(ws_area_km2),
+         width_to_area = ifelse(width_to_area > 20, NA, width_to_area ))%>%
+  relocate(ann_NEP_C, PR, .after = ann_ER_C)
+           
+
+
 write_csv(d, 'data_working/across_sites_model_data.csv')
 
