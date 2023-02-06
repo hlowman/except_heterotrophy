@@ -13,7 +13,7 @@ dd <- dat %>%
     select(site_name, ER = ann_ER_C, GPP = ann_GPP_C, PR, NEP = ann_NEP_C, 
            drainage_density_connected, drainage_density, Stream_PAR_sum,
            MOD_ann_NPP, PrecipWs,# precip_runoff_ratio, 
-           Disch_cv, max_interstorm, ws_area_km2, 
+           Disch_cv, Disch_ar1, RBI, max_interstorm, ws_area_km2, 
            width_to_area) %>%
     group_by(site_name) %>%
     summarize(across(everything(), median, na.rm = T)) %>%
@@ -24,6 +24,7 @@ dd <- dat %>%
            !is.na(MOD_ann_NPP)) %>%
     mutate(ER = - ER, 
            log_PR = log(PR),
+           log_RBI = log(RBI),
            # across(c(NEP, PR, log_PR), ~./max(., na.rm = T)),
            across(-c(site_name), ~scale(.)[,1]))
 
@@ -101,6 +102,9 @@ tau = 0.95
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum,
                      tau = tau, data = dd)
 mod_table <- add_mod(qmod, mod_table, C = FALSE, D = FALSE)
+qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + log_RBI,
+                     tau = tau, data = dd)
+mod_table <- add_mod(qmod, mod_table, C = FALSE)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + Disch_cv,
                      tau = tau, data = dd)
 mod_table <- add_mod(qmod, mod_table, C = FALSE)
@@ -119,6 +123,18 @@ mod_table <- add_mod(qmod, mod_table, D = FALSE)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + width_to_area,
                      tau = tau, data = dd)
 mod_table <- add_mod(qmod, mod_table, D = FALSE)
+qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + log_RBI + MOD_ann_NPP,
+                     tau = tau, data = dd)
+mod_table <- add_mod(qmod, mod_table)
+qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + log_RBI + PrecipWs,
+                     tau = tau, data = dd)
+mod_table <- add_mod(qmod, mod_table)
+qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + log_RBI + drainage_density_connected,
+                     tau = tau, data = dd)
+mod_table <- add_mod(qmod, mod_table)
+qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + log_RBI + width_to_area,
+                     tau = tau, data = dd)
+mod_table <- add_mod(qmod, mod_table)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + Disch_cv + MOD_ann_NPP,
                      tau = tau, data = dd)
 mod_table <- add_mod(qmod, mod_table)
@@ -147,7 +163,8 @@ mod_table <- add_mod(qmod, mod_table)
 mod_table <- mod_table %>% arrange(C_var) %>%
   mutate(C_col = case_when(C_var == 'width_to_area' ~ 'black',
                            TRUE ~ 'brown3'),
-         D_col = case_when(D_var == 'Disch_cv' ~ 'brown3',
+         D_col = case_when(D_var == 'log_RBI' ~ 'brown3',
+                           D_var == 'Disch_cv'~'brown3',
                            TRUE ~ 'black'),
          C_pch = as.numeric(factor(C_var)) + 14,
          D_pch = as.numeric(factor(D_var)))
@@ -156,16 +173,16 @@ png('figures/quantile_regression_coefficients_grouped.png', width = 7, height = 
     units = 'in', res = 300)
     par(mfrow = c(1,4),
         mar = c(4,0.3,5,0.3),
-        oma = c(1,1,1,1))
+        oma = c(1,1,2,1))
     
-    plot(mod_table$L_mean, seq(1:nrow(mod_table)), xlim = c(-0.4, .8), pch = 19,
+    plot(mod_table$L_mean, seq(1:nrow(mod_table)), xlim = c(-0.5, 1), pch = 19,
          xlab = expression(paste('Light (', beta[1], ')')), yaxt = 'n', bty = 'n')
     segments(x0 = mod_table$L_mean - mod_table$L_se, y0 = seq(1:nrow(mod_table)),
              x1 = mod_table$L_mean + mod_table$L_se, y1 = seq(1:nrow(mod_table)))
     abline(v = 0)
     mtext('Coefficient', line = 3.1, adj = 0)
     mtext('Estimates', line = 1.9, adj = 0)
-    plot(mod_table$D_mean, seq(1:nrow(mod_table)), xlim = c(-.2, 1), 
+    plot(mod_table$D_mean, seq(1:nrow(mod_table)), xlim = c(-.5, 1), 
          pch = mod_table$D_pch, col = mod_table$D_col, 
          xlab = expression(paste('Distrubance (', beta[2], ')')),
          yaxt = 'n', bty = 'n')
@@ -173,11 +190,11 @@ png('figures/quantile_regression_coefficients_grouped.png', width = 7, height = 
              x1 = mod_table$D_mean + mod_table$D_se, y1 = seq(1:nrow(mod_table)),
              col = mod_table$D_col)
     abline(v = 0)
-    legend(x = -0.1, y = nrow(mod_table) + 4.5, 
-           legend = c('max interstorm', 'CV discharge'),
-           pch = c(2, 1), col = c('black', 'brown3'),
+    legend(x = -0.1, y = nrow(mod_table) + 6, 
+           legend = c('max interstorm', 'CV discharge', 'RBI'),
+           pch = c(3, 2, 1), col = c('black', 'brown3', 'brown3'),
            bty = 'n', xpd = TRUE)
-    plot(mod_table$C_mean, seq(1:nrow(mod_table)), xlim = c(-.6, 0.6), 
+    plot(mod_table$C_mean, seq(1:nrow(mod_table)), xlim = c(-.75, 0.75), 
          pch = mod_table$C_pch, col = mod_table$C_col, 
          xlab = expression(paste('Connectivity (', beta[3], ')')),
          yaxt = 'n', bty = 'n')
@@ -185,7 +202,7 @@ png('figures/quantile_regression_coefficients_grouped.png', width = 7, height = 
              x1 = mod_table$C_mean + mod_table$C_se, y1 = seq(1:nrow(mod_table)), 
              col = mod_table$C_col)
     abline(v = 0)
-    legend(x = -0.5, y = nrow(mod_table) + 4.5, 
+    legend(x = -0.5, y = nrow(mod_table) + 6, 
            legend = c('width to area', 'precipitation',
                       'terrestrial NPP', 'con. drainage dens'),
            pch = c(18, 17, 16, 15), col = c('black', rep('brown3', 3)),
