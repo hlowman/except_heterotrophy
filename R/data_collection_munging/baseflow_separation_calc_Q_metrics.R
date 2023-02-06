@@ -10,7 +10,7 @@ library(tidyverse)
 #                  repos = NULL, type ='source', dependencies = TRUE)
 
 # library(EcoHydRology)
-install.packages("FlowScreen")
+# install.packages("FlowScreen")
 library(FlowScreen)
 
 
@@ -100,6 +100,21 @@ plot_bf_separation<- function(dat){
     mtext('baseflow index storm threshold', 1, 2.5)
 }    
 
+calc_RBI <- function(dat){
+  q <- dat %>% select(Date, discharge)
+  if(sum(is.na(q$discharge))/nrow(q) > 0.75){
+    print('need at least 75% of days to have discharge to proceed')
+    return(NA_real_)
+  }
+  q <- mutate(q, discharge = zoo::na.approx(discharge, na.rm = F)) %>%
+    filter(!is.na(discharge))
+  d <- diff(q$discharge)
+  RBI <- sum(abs(d))/sum(q$discharge[2:nrow(q)])
+  
+  return(RBI)
+  
+}
+
 # for(i in 1:length(lotic_siteyears_split)){
 #   plot_bf_separation(lotic_siteyears_split[[923]])
 # }
@@ -112,6 +127,7 @@ bf <- data.frame()
 for(i in 1:length(lotic_siteyears_split)){
     dat <- lotic_siteyears_split[[i]]
     d <- calc_storm_gaps(dat, threshold = 0.75)
+    d$RBI <- calc_RBI(dat)
     d$Site_ID <- dat$Site_ID[1]
     d$Year = dat$Year[1]
   
@@ -119,5 +135,4 @@ for(i in 1:length(lotic_siteyears_split)){
 }
 
 bf <- relocate(bf, c(Site_ID, Year))
-
 write_csv(bf, 'data_ignored/annual_interstorm_intervals.csv')

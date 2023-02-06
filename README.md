@@ -65,6 +65,7 @@ This Project is to study rivers that are exceptions to the long-standing dogma i
     - uses FlowScreen to separate baseflow based on the Eckhardt Method
     - contains an analysis of different baseflow index thresholds for calculating interstorm intervals
     - calculated max and median interstorm interval for each siteyear
+    - calculated Richards-Baker Flashiness index
     
 **5. prep_watershed_data_for_model.R**  
     - Condenses streamcat and NHD variables into categories (eg. %Urban-high, %Urban-mid, and %Urban-low all combine to become %Urban). See script for specific combinations.  

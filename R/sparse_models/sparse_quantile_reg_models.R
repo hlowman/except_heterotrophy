@@ -1,7 +1,7 @@
 # This code is adapted from the constrained quantile regression model 
 #   It refits the quantile regressions using a built in lasso method and including the whole dataset.
 
-# A Carte
+# A Carter
 
 
 # update the two quantile model files to reflect that
@@ -21,6 +21,7 @@ dd <- dat %>%
     group_by(site_name) %>%
     summarize(across(where(is.numeric), median, na.rm = T))
 
+# log transform highly skewed variables
 dd <- dd %>%
     rename(NEP = ann_NEP_C)%>%
     filter(!is.na(drainage_density),
@@ -57,8 +58,7 @@ lqmod <- quantreg::rqss(NEP ~ lat+lon+PAR_sum+Stream_PAR_sum+Wtemp_mean+Wtemp_cv
 qq <- summary(lqmod, se = 'boot')
 colnames(qq$coef)<- c('value', 'se', 't_val', 'p_val')
 data.frame(qq$coef) %>%
-  arrange(p_val)
+  arrange(desc(value))
 summary(lqmod, se = 'boot')
-anova(qmod, test = 'Wald', joint = FALSE)
 
 plot(qmod)
