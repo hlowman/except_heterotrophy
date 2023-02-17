@@ -1,4 +1,8 @@
 ## Compiled by IAO 2022-02-17, RF modeling
+## Notes: a classification workflow tutorial using tidymodels: https://www.kirenz.com/post/2021-02-17-r-classification-tidymodels/
+## Look at this tutorial for regression problems (haven't read this thoroughly but I know glmnet is one of the engines interestingly enough)
+# https://www.tidymodels.org/learn/models/parsnip-ranger-glmnet/
+
 
 if (!require('pacman')) install.packages('pacman'); library('pacman')
 
@@ -25,19 +29,19 @@ dd <- dat %>%
                              TRUE ~ "autotrophic"))
 
 dd_trim <- dd %>%
-  dplyr::select(NEP_cat, site_name, PAR_sum:width_to_area) %>%
+  dplyr::select(site_name, ann_NEP_C, PAR_sum:width_to_area) %>%
   drop_na()
 
 #What's the ratio of auto to heterotrophic sites?
 dd_trim %>% count(NEP_cat)
 #Yikes... 
 
-split_d <- initial_split(dd_trim, strata = NEP_cat, prop=0.50)
+split_d <- initial_split(dd_trim, strata = ann_NEP_C, prop=0.50)
 train_d <- training(split_d)%>%  mutate_if(is.numeric, round, digits=2) 
 test_d<- testing(split_d)%>%  mutate_if(is.numeric, round, digits=2) 
 ## I doubled checked and at least 25% of each Trend group is set aside for validation
 val_d <- validation_split(train_d, 
-                          strata = NEP_cat, 
+                          strata = ann_NEP_C, 
                           prop = 0.8)
 
 
@@ -47,10 +51,10 @@ cores
 rf_mod <- 
   rand_forest(mtry = tune(), min_n = tune(), trees = 1000) %>% 
   set_engine("ranger", num.threads = cores) %>% 
-  set_mode("classification")
+  set_mode("regression") #classification if categorical
 
 rf_recipe <- 
-  recipe(NEP_cat ~ ., data = train_d) %>%#Unlike MLR, doesn't require dummy or normalized predictor variables
+  recipe(ann_NEP_C ~ ., data = train_d) %>%#Unlike MLR, doesn't require dummy or normalized predictor variables
   update_role(site_name, new_role = "ID") #Specify that this is an identifier
 
 rf_workflow <- 
@@ -61,7 +65,6 @@ rf_workflow <-
 rf_mod #we  have 2 hyperparameters for tuning
 rf_mod %>%    
   parameters()
-hardhat::extract_parameter_set_dials(rf_mod)
 
 #Use a space-filling design to tune, with 25 candidate models
 set.seed(345)
@@ -116,47 +119,47 @@ last_rf_fit %>%
 
 #Get VI scores
 
-vip_plot<-last_rf_fit %>% 
-  pluck(".workflow", 1) %>%   
-  extract_fit_parsnip() %>% 
-  vip::vip(num_features = 10)
-
-vip_plot
-
-
-
-#Plot ROC curve
-last_rf_fit %>% 
-  collect_predictions() %>% 
-  roc_curve(NEP_cat, .pred_autotrophic) %>% 
-  autoplot()
-fit_rf<-as.data.frame(last_rf_fit %>%
-                        pluck(".predictions"))
-require(multiROC)
-true_label <- data.frame(dummies::dummy(test_d$Trend_new))
-colnames(true_label) <- c("Negative","NoTrend","Positive")
-colnames(true_label) <- paste(colnames(true_label), "_true", sep="")
-rf_pred <- fit_rf[,1:3]
-colnames(rf_pred) <- c("Negative","NoTrend","Positive")
-colnames(rf_pred) <- paste(colnames(rf_pred), "_pred_RF", sep="")
-final_df <- cbind(true_label, rf_pred)
-roc_res <- multi_roc(final_df, force_diag=T)
-plot_roc_df <- plot_roc_data(roc_res)
-aucs <- plot_roc_df %>%
-  select(AUC, Method, Group) %>%
-  filter(!Group %in% c('Micro','Macro'))%>%
-  distinct()
-ROC<-plot_roc_df %>%
-  filter(!Group %in% c('Micro','Macro'))%>%
-  ggplot(., aes(x=1-Specificity,y=Sensitivity,color = Group)) +
-  geom_step() +
-  geom_text(data=aucs[aucs$Group=='NoTrend',], aes(x=0.2,y=1, label=paste0('AUC = ',round(AUC,2))), show.legend = FALSE, size=3) +
-  geom_text(data=aucs[aucs$Group=='Negative',], aes(x=0.2,y=.95, label=paste0('AUC = ',round(AUC,2))), show.legend = FALSE, size=3) +
-  geom_text(data=aucs[aucs$Group=='Positive',], aes(x=0.2,y=.9, label=paste0('AUC = ',round(AUC,2))), show.legend = FALSE, size=3) +
-  scale_color_manual(values = trendColors_a) +
-  geom_abline(slope=1,intercept=0, linetype="dashed")+
-  theme_few()
-ROC
-# Confusion matrix
-confMatRF<-confusionMatrix(fit_rf$'.pred_class', test_d$Trend_new)
-confMatRF
+# vip_plot<-last_rf_fit %>% 
+#   pluck(".workflow", 1) %>%   
+#   extract_fit_parsnip() %>% 
+#   vip::vip(num_features = 10)
+# 
+# vip_plot
+# 
+# 
+# 
+# #Plot ROC curve
+# last_rf_fit %>% 
+#   collect_predictions() %>% 
+#   roc_curve(NEP_cat, .pred_autotrophic) %>% 
+#   autoplot()
+# fit_rf<-as.data.frame(last_rf_fit %>%
+#                         pluck(".predictions"))
+# require(multiROC)
+# true_label <- data.frame(dummies::dummy(test_d$Trend_new))
+# colnames(true_label) <- c("Negative","NoTrend","Positive")
+# colnames(true_label) <- paste(colnames(true_label), "_true", sep="")
+# rf_pred <- fit_rf[,1:3]
+# colnames(rf_pred) <- c("Negative","NoTrend","Positive")
+# colnames(rf_pred) <- paste(colnames(rf_pred), "_pred_RF", sep="")
+# final_df <- cbind(true_label, rf_pred)
+# roc_res <- multi_roc(final_df, force_diag=T)
+# plot_roc_df <- plot_roc_data(roc_res)
+# aucs <- plot_roc_df %>%
+#   select(AUC, Method, Group) %>%
+#   filter(!Group %in% c('Micro','Macro'))%>%
+#   distinct()
+# ROC<-plot_roc_df %>%
+#   filter(!Group %in% c('Micro','Macro'))%>%
+#   ggplot(., aes(x=1-Specificity,y=Sensitivity,color = Group)) +
+#   geom_step() +
+#   geom_text(data=aucs[aucs$Group=='NoTrend',], aes(x=0.2,y=1, label=paste0('AUC = ',round(AUC,2))), show.legend = FALSE, size=3) +
+#   geom_text(data=aucs[aucs$Group=='Negative',], aes(x=0.2,y=.95, label=paste0('AUC = ',round(AUC,2))), show.legend = FALSE, size=3) +
+#   geom_text(data=aucs[aucs$Group=='Positive',], aes(x=0.2,y=.9, label=paste0('AUC = ',round(AUC,2))), show.legend = FALSE, size=3) +
+#   scale_color_manual(values = trendColors_a) +
+#   geom_abline(slope=1,intercept=0, linetype="dashed")+
+#   theme_few()
+# ROC
+# # Confusion matrix
+# confMatRF<-confusionMatrix(fit_rf$'.pred_class', test_d$Trend_new)
+# confMatRF
