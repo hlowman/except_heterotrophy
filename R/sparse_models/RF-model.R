@@ -29,137 +29,147 @@ dd <- dat %>%
                              TRUE ~ "autotrophic"))
 
 dd_trim <- dd %>%
-  dplyr::select(site_name, ann_NEP_C, PAR_sum:width_to_area) %>%
+  dplyr::select(site_name, NEP_cat, ann_NEP_C, lat:width_to_area) %>%
   drop_na()
+
+preds <- c("lat", "lon", "PAR_sum", "Stream_PAR_sum", "Wtemp_mean", "Wtemp_cv",
+           "Wtemp_skew", "Wtemp_kurt", "Wtemp_amp", "Wtemp_phase", "Wtemp_ar1",
+           "Disch_mean", "Disch_cv", "Disch_skew", "Disch_kurt", "Disch_amp",
+           "Disch_phase", "Disch_ar1", "PAR_mean", "PAR_cv", "PAR_skew", "PAR_kurt",
+           "PAR_amp", "PAR_phase", "PAR_ar1", "LAI_mean", "LAI_cv", "LAI_skew",
+           "LAI_kurt", "LAI_amp", "LAI_phase", "LAI_ar1", "Width", "MOD_ann_NPP",
+           "IGBP_LC_Type1Class2018", "reach_proportion", "NHD_STREAMORDE",
+           "NHD_SLOPE", "NHD_TIDAL", "ws_area_km2", "ElevWs", "PrecipWs",
+           "TminWs", "TmaxWs", "TmeanWs", "RunoffWs", "HUDen2010Ws", "PopDen2010Ws",
+           "Inorg_N_WetDep_kgNhayr_2008", "RdDensWs", "PctCarbResidWs",
+           "PctNonCarbResidWs", "PctAlkIntruVolWs", "PctSilicicWs", "PctExtruVolWs",
+           "PctColluvSedWs", "PctGlacTilClayWs", "PctGlacTilLoamWs", "PctGlacTilCrsWs",
+           "PctGlacLakeCrsWs", "PctGlacLakeFineWs", "PctHydricWs", "PctEolCrsWs",
+           "PctEolFineWs", "PctSalLakeWs", "PctAlluvCoastWs", "PctCoastCrsWs", "PctWaterWs",
+           "WtDepWs", "OmWs", "PermWs", "RckDepWs", "BFIWs", "HydrlCondWs",
+           "NWs", "Al2O3Ws", "CaOWs", "Fe2O3Ws", "K2OWs", "MgOWs", "Na2OWs",
+           "P2O5Ws", "SWs", "SiO2Ws", "precip_runoff_ratio", "NLCD_PctUrban",
+           "NLCD_PctAgriculture", "NLCD_PctForest", "NLCD_PctBarren", "NLCD_PctWater",
+           "NLCD_PctWetland", "NLCD_PctGrassland", "Inorg_N_fert_kgNhayr",
+           "Org_N_fert_kgNhayr", "Dam_densityperkm2", "Dam_total_vol_m3km2",
+           "Dam_normal_vol_m3km2", "Waste_point_srcs_perkm2", "Pct_impcov",
+           "connected_flow_length", "total_flow_length", "drainage_density",
+           "drainage_density_connected", "med_interstorm", "max_interstorm",
+           "width_to_area")
+
+
 
 #What's the ratio of auto to heterotrophic sites?
 dd_trim %>% count(NEP_cat)
 #Yikes... 
 
-split_d <- initial_split(dd_trim, strata = ann_NEP_C, prop=0.50)
+split_d <- initial_split(dd_trim, strata = NEP_cat, prop=0.75)
 train_d <- training(split_d)%>%  mutate_if(is.numeric, round, digits=2) 
 test_d<- testing(split_d)%>%  mutate_if(is.numeric, round, digits=2) 
-## I doubled checked and at least 25% of each Trend group is set aside for validation
 val_d <- validation_split(train_d, 
-                          strata = ann_NEP_C, 
+                          strata = NEP_cat, 
                           prop = 0.8)
 
+train_d <- train_d %>% select(ann_NEP_C, site_name, all_of(preds))
+test_d <- test_d %>% select(ann_NEP_C, site_name, all_of(preds))
 
-#Try random forest again
+rf_defaults <- rand_forest(mode = "regression")
+
+rf_xy_fit <- 
+  rf_defaults %>%
+  set_engine("ranger") %>%
+  fit(ann_NEP_C~., data=train_d)
+
+rf_xy_fit
+
+
+
+
+
+# 
+# #Try random forest again
 cores <- parallel::detectCores()
 cores
-rf_mod <- 
-  rand_forest(mtry = tune(), min_n = tune(), trees = 1000) %>% 
-  set_engine("ranger", num.threads = cores) %>% 
-  set_mode("regression") #classification if categorical
 
-rf_recipe <- 
+rf_mod <-
+  rand_forest(mtry = tune(), min_n = tune(), trees = 1000) %>%
+  set_engine("ranger", num.threads = cores) %>%
+  set_mode("regression") #classification if categorical
+# 
+rf_recipe <-
   recipe(ann_NEP_C ~ ., data = train_d) %>%#Unlike MLR, doesn't require dummy or normalized predictor variables
   update_role(site_name, new_role = "ID") #Specify that this is an identifier
-
-rf_workflow <- 
-  workflow() %>% 
-  add_model(rf_mod) %>% 
+# 
+rf_workflow <-
+  workflow() %>%
+  add_model(rf_mod) %>%
   add_recipe(rf_recipe)
-#TRAIN AND TUNE THE MODEL
+# 
+# #TRAIN AND TUNE THE MODEL
 rf_mod #we  have 2 hyperparameters for tuning
-rf_mod %>%    
+rf_mod %>%
   parameters()
-
-#Use a space-filling design to tune, with 25 candidate models
-set.seed(345)
-rf_res <- 
-  rf_workflow %>% 
+# 
+# #Use a space-filling design to tune, with 25 candidate models
+# set.seed(345)
+rf_res <-
+  rf_workflow %>%
   tune_grid(val_d,
             grid = 25,
-            control = control_grid(save_pred = TRUE),
-            metrics = metric_set(roc_auc))
+            control = control_grid(save_pred = TRUE))
+#In regression, the root mean squared error and coefficient of determination are computed
 
-#Top 5 models
+#Top 5 model configuration based on rsq
 rf_res %>%
-  show_best(metric = "roc_auc")
+  show_best(metric = c("rsq"))
 autoplot(rf_res)+geom_smooth(method="lm")
-#Looks like roc_auc decreaes as minimum node size increases, similar pattern for # randomly selected predictors
-rf_best <-
-  rf_res %>% 
-  select_best(metric = "roc_auc")
-rf_best #selects best model based on roc_auc
-#Calculate the data needed to plot the ROC curve. Possible after tuning with control_grid(save_pred=TRUE)
-rf_res %>% 
-  collect_predictions()
-#To filter the predictions for only our best random forest model, we can use the parameters argument and pass it our tibble with the best hyperparameter values from tuning, which we called rf_best:
-rf_auc <- 
-  rf_res %>% 
-  collect_predictions(parameters = rf_best) %>% 
-  roc_curve(NEP_cat, .pred_autotrophic:.pred_heterotrophic) %>% 
-  mutate(model = "Random Forest")
-## ^^ Note this doesn't work (yet)
+##Looks like rsq/rmse improve are best with min_n =3 and mtry =106
 
-#So start by rebuilding parsnip model object from scratch and add a new argument (impurity) to get VI scores
+rf_best <-
+  rf_res %>%
+  select_best(metric = "rsq")
+rf_best #selects best model based on rsq
+
+# #Calculate the data needed to plot the ROC curve. Possible after tuning with control_grid(save_pred=TRUE)
+rf_res %>%
+  collect_predictions()
+
+## To filter the predictions for only our best random forest model, we can use the parameters argument and pass it our tibble with the best hyperparameter values from tuning, which we called rf_best:
+
+# rf_auc <-
+#   rf_res %>%
+#   collect_predictions(parameters = rf_best) %>%
+#   roc_curve(NEP_cat, .pred_autotrophic:.pred_heterotrophic) %>%
+#   mutate(model = "Random Forest")
+
+rf_res %>%
+  collect_predictions(parameters = rf_best) %>%
+  ggplot(aes(ann_NEP_C, .pred)) +
+  geom_abline(lty = 2, color = "gray80", size = 1) +
+  geom_point() +
+  labs(
+    x = "Observed ann_NEP_C",
+    y = "Predicted ann_NEP_C"
+  )+
+  ggpubr::theme_pubr()
+
+ 
 # the last model
-last_rf_mod <- 
-  rand_forest(mtry = 4, min_n = 3, trees = 1000) %>% 
-  set_engine("ranger", num.threads = cores, importance = "impurity") %>% 
-  set_mode("classification")
+last_rf_mod <-
+  rand_forest(mtry = 103, min_n = 6, trees = 1000) %>%
+  set_engine("ranger", num.threads = cores) %>%
+  set_mode("regression")
 # the last workflow
-last_rf_workflow <- 
-  rf_workflow %>% 
+last_rf_workflow <-
+  rf_workflow %>%
   update_model(last_rf_mod)
-# the last fit
+# # the last fit
 set.seed(345)
-last_rf_fit <- 
-  last_rf_workflow %>% 
+last_rf_fit <-
+  last_rf_workflow %>%
   last_fit(split_d)
-last_rf_fit %>% 
+last_rf_fit %>%
   collect_metrics()
 
-
-
-# Plots -------------------------------------------------------------------
-
-#Get VI scores
-
-# vip_plot<-last_rf_fit %>% 
-#   pluck(".workflow", 1) %>%   
-#   extract_fit_parsnip() %>% 
-#   vip::vip(num_features = 10)
-# 
-# vip_plot
-# 
-# 
-# 
-# #Plot ROC curve
-# last_rf_fit %>% 
-#   collect_predictions() %>% 
-#   roc_curve(NEP_cat, .pred_autotrophic) %>% 
-#   autoplot()
-# fit_rf<-as.data.frame(last_rf_fit %>%
-#                         pluck(".predictions"))
-# require(multiROC)
-# true_label <- data.frame(dummies::dummy(test_d$Trend_new))
-# colnames(true_label) <- c("Negative","NoTrend","Positive")
-# colnames(true_label) <- paste(colnames(true_label), "_true", sep="")
-# rf_pred <- fit_rf[,1:3]
-# colnames(rf_pred) <- c("Negative","NoTrend","Positive")
-# colnames(rf_pred) <- paste(colnames(rf_pred), "_pred_RF", sep="")
-# final_df <- cbind(true_label, rf_pred)
-# roc_res <- multi_roc(final_df, force_diag=T)
-# plot_roc_df <- plot_roc_data(roc_res)
-# aucs <- plot_roc_df %>%
-#   select(AUC, Method, Group) %>%
-#   filter(!Group %in% c('Micro','Macro'))%>%
-#   distinct()
-# ROC<-plot_roc_df %>%
-#   filter(!Group %in% c('Micro','Macro'))%>%
-#   ggplot(., aes(x=1-Specificity,y=Sensitivity,color = Group)) +
-#   geom_step() +
-#   geom_text(data=aucs[aucs$Group=='NoTrend',], aes(x=0.2,y=1, label=paste0('AUC = ',round(AUC,2))), show.legend = FALSE, size=3) +
-#   geom_text(data=aucs[aucs$Group=='Negative',], aes(x=0.2,y=.95, label=paste0('AUC = ',round(AUC,2))), show.legend = FALSE, size=3) +
-#   geom_text(data=aucs[aucs$Group=='Positive',], aes(x=0.2,y=.9, label=paste0('AUC = ',round(AUC,2))), show.legend = FALSE, size=3) +
-#   scale_color_manual(values = trendColors_a) +
-#   geom_abline(slope=1,intercept=0, linetype="dashed")+
-#   theme_few()
-# ROC
-# # Confusion matrix
-# confMatRF<-confusionMatrix(fit_rf$'.pred_class', test_d$Trend_new)
-# confMatRF
+# Judging model effectiveness for regression problems
+# https://www.tmwr.org/performance.html
