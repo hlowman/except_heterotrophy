@@ -57,8 +57,6 @@ preds <- c("lat", "lon", "PAR_sum", "Stream_PAR_sum", "Wtemp_mean", "Wtemp_cv",
            "drainage_density_connected", "med_interstorm", "max_interstorm",
            "width_to_area")
 
-
-
 #What's the ratio of auto to heterotrophic sites?
 dd_trim %>% count(NEP_cat)
 #Yikes... 
@@ -73,21 +71,14 @@ val_d <- validation_split(train_d,
 train_d <- train_d %>% select(ann_NEP_C, site_name, all_of(preds))
 test_d <- test_d %>% select(ann_NEP_C, site_name, all_of(preds))
 
-rf_defaults <- rand_forest(mode = "regression")
-
-rf_xy_fit <- 
-  rf_defaults %>%
-  set_engine("ranger") %>%
-  fit(ann_NEP_C~., data=train_d)
-
-rf_xy_fit
 
 
 
 
 
-# 
-# #Try random forest again
+# Try random forest REGRESSION --------------------------------------------
+
+
 cores <- parallel::detectCores()
 cores
 
@@ -173,3 +164,113 @@ last_rf_fit %>%
 
 # Judging model effectiveness for regression problems
 # https://www.tmwr.org/performance.html
+
+
+# Try random forest CLASSIFICATION --------------------------------------------
+split_d <- initial_split(dd_trim, strata = NEP_cat, prop=0.75)
+train_d <- training(split_d)%>%  mutate_if(is.numeric, round, digits=2) 
+test_d<- testing(split_d)%>%  mutate_if(is.numeric, round, digits=2) 
+val_d <- validation_split(train_d, 
+                          strata = NEP_cat, 
+                          prop = 0.8)
+
+train_d <- train_d %>% select(NEP_cat, site_name, all_of(preds))
+test_d <- test_d %>% select(NEP_cat, site_name, all_of(preds))
+
+
+#Try random forest again, this time as classification
+cores <- parallel::detectCores()
+cores
+
+rf_mod <- 
+  rand_forest(mtry = tune(), min_n = tune(), trees = 1000) %>% 
+  set_engine("ranger", num.threads = cores) %>% 
+  set_mode("classification")
+
+rf_recipe <- 
+  recipe(NEP_cat ~ ., data = train_d) %>%#Unlike MLR, doesn't require dummy or normalized predictor variables
+  update_role(site_name, new_role = "ID") #Specify that this is an identifier
+
+rf_workflow <- 
+  workflow() %>% 
+  add_model(rf_mod) %>% 
+  add_recipe(rf_recipe)
+
+#TRAIN AND TUNE THE MODEL
+rf_mod #we  have 2 hyperparameters for tuning
+rf_mod %>%    
+  parameters() 
+
+#Use a space-filling design to tune, with 25 candidate models
+set.seed(345)
+rf_res <- 
+  rf_workflow %>% 
+  tune_grid(val_d,
+            grid = 25,
+            control = control_grid(save_pred = TRUE),
+            metrics = metric_set(roc_auc))
+
+#Top 5 models
+rf_res %>%
+  show_best(metric = "roc_auc")
+autoplot(rf_res)+geom_smooth(method="lm")
+## Uhhh?
+
+
+#Looks like roc_auc decreaes as minimum node size increases, similar pattern for # randomly selected predictors
+rf_best <-
+  rf_res %>% 
+  select_best(metric = "roc_auc")
+rf_best #selects best model based on roc_auc
+
+#Calculate the data needed to plot the ROC curve. Possible after tuning with control_grid(save_pred=TRUE)
+rf_res %>% 
+  collect_predictions()
+
+#To filter the predictions for only our best random forest model, we can use the parameters argument and pass it our tibble with the best hyperparameter values from tuning, which we called rf_best:
+rf_auc <- 
+  rf_res %>% 
+  collect_predictions(parameters = rf_best) %>% 
+  roc_curve(NEP_cat, .pred_autotrophic:.pred_heterotrophic) %>% 
+  mutate(model = "Random Forest") 
+#^^ Doesn't work and I'm not sure why yet
+
+#So start by rebuilding parsnip model object from scratch and add a new argument (impurity) to get VI scores
+# the last model
+last_rf_mod <- 
+  rand_forest(mtry = 47, min_n = 7, trees = 1000) %>% 
+  set_engine("ranger", num.threads = cores, importance = "impurity") %>% 
+  set_mode("classification")
+
+# the last workflow
+last_rf_workflow <- 
+  rf_workflow %>% 
+  update_model(last_rf_mod)
+
+# the last fit
+set.seed(345)
+last_rf_fit <- 
+  last_rf_workflow %>% 
+  last_fit(split_d)
+
+last_rf_fit %>% 
+  collect_metrics()
+
+#Get VI scores
+library(vip)
+vip_plot<-last_rf_fit %>% 
+  pluck(".workflow", 1) %>%   
+  extract_fit_parsnip() %>% 
+  vip(num_features = 10)
+vip_plot
+
+
+#Plot ROC curve
+last_rf_fit %>% 
+  collect_predictions() %>% 
+  roc_curve(NEP_cat, .pred_autotrophic:.pred_heterotrophic) %>% 
+  autoplot()
+# I guess roc_curve just doesn't work for binary classifications?
+
+#This might give us some options for evaluating performance:
+#https://cran.r-project.org/web/packages/ROCit/vignettes/my-vignette.html
