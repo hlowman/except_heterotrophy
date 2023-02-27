@@ -32,6 +32,9 @@ dd_trim <- dd %>%
   dplyr::select(site_name, NEP_cat, ann_NEP_C, lat:width_to_area) %>%
   drop_na()
 
+cor.test(dd_trim$ElevWs, dd_trim$MOD_ann_NPP)
+plot(dd_trim$PAR_kurt, dd_trim$MOD_ann_NPP)
+
 preds <- c("lat", "lon", "PAR_sum", "Stream_PAR_sum", "Wtemp_mean", "Wtemp_cv",
            "Wtemp_skew", "Wtemp_kurt", "Wtemp_amp", "Wtemp_phase", "Wtemp_ar1",
            "Disch_mean", "Disch_cv", "Disch_skew", "Disch_kurt", "Disch_amp",
