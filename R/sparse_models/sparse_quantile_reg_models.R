@@ -4,9 +4,6 @@
 # A Carter
 
 
-# update the two quantile model files to reflect that
-# summarize the issue you are having with exponentially distributed data and message bella and Christa
-
 library(tidyverse)
 library(quantreg)
 library(corrplot)
@@ -21,20 +18,23 @@ dd <- dat %>%
     group_by(site_name) %>%
     summarize(across(where(is.numeric), median, na.rm = T))
 
-# log transform highly skewed variables
-dd <- dd %>%
+# remove % cover geologic variables as these are highly zero inflated and likely
+# not relevant predictors. Log transform highly skewed variables
+geol_vars <- grep('^Pct(?!_)', colnames(dd), perl = TRUE)
+
+dd <- dd[,-geol_vars] %>%
     rename(NEP = ann_NEP_C)%>%
     filter(!is.na(drainage_density),
            !is.na(PrecipWs),
            !is.na(Stream_PAR_sum),
            !is.na(width_to_area)) %>%
-    select(-ann_GPP_C, -ann_ER_C) %>%
-    mutate(across(c(Disch_mean, Width, NHD_SLOPE, ws_area_km2, ElevWs, PopDen2010Ws,
-                    starts_with(c('Pct', 'NLCD_Pct', 'Dam')), OmWs, HydrlCondWs, NWs, 
-                                CaOWs, P2O5Ws, SWs, precip_runoff_ratio,
-                                Inorg_N_fert_kgNhayr, Org_N_fert_kgNhayr,
-                                Waste_point_srcs_perkm2, connected_flow_length,
-                                total_flow_length), ~log(.+1)))%>%
+    select(-ann_GPP_C, -ann_ER_C, -NHD_TIDAL) %>%
+    mutate(across(c(Disch_mean, Width, NHD_SLOPE, ws_area_km2, ElevWs,
+                    starts_with(c('Pct', 'NLCD_Pct', 'Dam')), OmWs, HydrlCondWs,
+                    NWs, CaOWs, P2O5Ws, SWs, precip_runoff_ratio,
+                    Inorg_N_fert_kgNhayr, Org_N_fert_kgNhayr, PopDen2010Ws,
+                    Waste_point_srcs_perkm2, connected_flow_length, 
+                    total_flow_length), ~log(.+1)))%>%
     mutate(across(c(-site_name, -year), ~scale(.)[,1]))
 
 hist2 <- function(x,y){
@@ -46,19 +46,34 @@ tmp <- select(dd, where(is.numeric))
 mapply(hist2, x = tmp, y = colnames(tmp))
 # test sparse quantile regression:####
 summary(lm(NEP ~ Stream_PAR_sum + PrecipWs + Disch_cv, dd))
+fmlqmod <- as.formula(
+  paste('NEP ~', paste(colnames(dd[,7:ncol(dd)]), collapse = '+'), sep = ' '))
 # qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + PrecipWs + Disch_cv,
-qmod <- quantreg::rq(NEP ~ lat+lon+PAR_sum+Stream_PAR_sum+Wtemp_mean+Wtemp_cv+Wtemp_skew+Wtemp_kurt+Wtemp_amp+Wtemp_phase+Wtemp_ar1+Disch_mean+Disch_cv+Disch_skew+Disch_kurt+Disch_amp+Disch_phase+Disch_ar1+PAR_mean+PAR_cv+PAR_skew+PAR_kurt+PAR_amp+PAR_phase+PAR_ar1+LAI_mean+LAI_cv+LAI_skew+LAI_kurt+LAI_amp+LAI_phase+LAI_ar1+Width+MOD_ann_NPP+IGBP_LC_Type1Class2018+reach_proportion+NHD_STREAMORDE+NHD_SLOPE+NHD_TIDAL+ws_area_km2+ElevWs+PrecipWs+TminWs+TmaxWs+TmeanWs+RunoffWs+HUDen2010Ws+PopDen2010Ws+Inorg_N_WetDep_kgNhayr_2008+RdDensWs+PctCarbResidWs+PctNonCarbResidWs+PctAlkIntruVolWs+PctSilicicWs+PctExtruVolWs+PctColluvSedWs+PctGlacTilClayWs+PctGlacTilLoamWs+PctGlacTilCrsWs+PctGlacLakeCrsWs+PctGlacLakeFineWs+PctHydricWs+PctEolCrsWs+PctEolFineWs+PctSalLakeWs+PctAlluvCoastWs+PctCoastCrsWs+PctWaterWs+WtDepWs+OmWs+PermWs+RckDepWs+BFIWs+HydrlCondWs+NWs+Al2O3Ws+CaOWs+Fe2O3Ws+K2OWs+MgOWs+Na2OWs+P2O5Ws+SWs+SiO2Ws+precip_runoff_ratio+NLCD_PctUrban+NLCD_PctAgriculture+NLCD_PctForest+NLCD_PctBarren+NLCD_PctWater+NLCD_PctWetland+NLCD_PctGrassland+Inorg_N_fert_kgNhayr+Org_N_fert_kgNhayr+Dam_densityperkm2+Dam_total_vol_m3km2+Dam_normal_vol_m3km2+Waste_point_srcs_perkm2+Pct_impcov+connected_flow_length+total_flow_length+drainage_density+drainage_density_connected+med_interstorm+max_interstorm+width_to_area,
+qmod <- quantreg::rq(fmlqmod,
                      tau =  0.95, 
                      data = dd)
 
-fmlqmod <- paste('NEP ~', paste(colnames(dd[,5:ncol(dd)]), collapse  = '+'), sep = ' ')
-lqmod <- quantreg::rqss(NEP ~ lat+lon+PAR_sum+Stream_PAR_sum+Wtemp_mean+Wtemp_cv+Wtemp_skew+Wtemp_kurt+Wtemp_amp+Wtemp_phase+Wtemp_ar1+Disch_mean+Disch_cv+Disch_skew+Disch_kurt+Disch_amp+Disch_phase+Disch_ar1+PAR_mean+PAR_cv+PAR_skew+PAR_kurt+PAR_amp+PAR_phase+PAR_ar1+LAI_mean+LAI_cv+LAI_skew+LAI_kurt+LAI_amp+LAI_phase+LAI_ar1+Width+MOD_ann_NPP+IGBP_LC_Type1Class2018+reach_proportion+NHD_STREAMORDE+NHD_SLOPE+NHD_TIDAL+ws_area_km2+ElevWs+PrecipWs+TminWs+TmaxWs+TmeanWs+RunoffWs+HUDen2010Ws+PopDen2010Ws+Inorg_N_WetDep_kgNhayr_2008+RdDensWs+PctCarbResidWs+PctNonCarbResidWs+PctAlkIntruVolWs+PctSilicicWs+PctExtruVolWs+PctColluvSedWs+PctGlacTilClayWs+PctGlacTilLoamWs+PctGlacTilCrsWs+PctGlacLakeCrsWs+PctGlacLakeFineWs+PctHydricWs+PctEolCrsWs+PctEolFineWs+PctSalLakeWs+PctAlluvCoastWs+PctCoastCrsWs+PctWaterWs+WtDepWs+OmWs+PermWs+RckDepWs+BFIWs+HydrlCondWs+NWs+Al2O3Ws+CaOWs+Fe2O3Ws+K2OWs+MgOWs+Na2OWs+P2O5Ws+SWs+SiO2Ws+precip_runoff_ratio+NLCD_PctUrban+NLCD_PctAgriculture+NLCD_PctForest+NLCD_PctBarren+NLCD_PctWater+NLCD_PctWetland+NLCD_PctGrassland+Inorg_N_fert_kgNhayr+Org_N_fert_kgNhayr+Dam_densityperkm2+Dam_total_vol_m3km2+Dam_normal_vol_m3km2+Waste_point_srcs_perkm2+Pct_impcov+connected_flow_length+total_flow_length+drainage_density+drainage_density_connected+med_interstorm+max_interstorm+width_to_area,
-                        tau =  0.95, method = 'lasso', lambda = 2,
+lqmod <- quantreg::rqss(fmlqmod,
+                        tau =  0.95, method = 'lasso', lambda = 10,
                         data = dd)
+summary(lqmod, se = 'boot')
 qq <- summary(lqmod, se = 'boot')
 colnames(qq$coef)<- c('value', 'se', 't_val', 'p_val')
-data.frame(qq$coef) %>%
-  arrange(desc(value))
-summary(lqmod, se = 'boot')
+coefs <- data.frame(qq$coef) %>%
+  arrange((abs(value))) %>%
+  filter(p_val < 0.99) %>%
+  slice(-6) 
 
-plot(qmod)
+coefs$col <- c('red', 'black', 'black', 'grey', 'grey')
+par(mar = c(4,7,1,1))
+plot(coefs$value, seq(nrow(coefs):1), pch = 19, xlim = c(-0.2, 0.25),
+     xlab = expression(paste( 'Coefficient estimate (', beta, ')')), 
+     bty = 'n', yaxt = 'n', ylab = '', col = coefs$col)
+segments(x0 = coefs$value - coefs$se, y0 = seq(nrow(coefs):1),
+         x1 = coefs$value + coefs$se, y1 = seq(nrow(coefs):1), 
+         col = coefs$col)
+axis(2, at = seq(nrow(coefs):1), 
+     labels = rev(c("Elevation", "PAR kurtosis", 
+                "Max interstorm", "Width", 
+                "Terrestrial NPP")), las = 2)
+abline(v = 0)
