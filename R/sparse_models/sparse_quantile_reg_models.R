@@ -65,6 +65,8 @@ coefs <- data.frame(qq$coef) %>%
   slice(-6) 
 
 coefs$col <- c('red', 'black', 'black', 'grey', 'grey')
+
+png('figures/sparse_quantile_regression_results.png', width = 5, height = 4, units = 'in', res = 300)
 par(mar = c(4,7,1,1))
 plot(coefs$value, seq(nrow(coefs):1), pch = 19, xlim = c(-0.2, 0.25),
      xlab = expression(paste( 'Coefficient estimate (', beta, ')')), 
@@ -77,3 +79,4 @@ axis(2, at = seq(nrow(coefs):1),
                 "Max interstorm", "Width", 
                 "Terrestrial NPP")), las = 2)
 abline(v = 0)
+dev.off()
