@@ -23,6 +23,7 @@ dd <- dat %>%
 geol_vars <- grep('^Pct(?!_)', colnames(dd), perl = TRUE)
 
 dd <- dd[,-geol_vars] %>%
+    select(-reach_proportion) %>%
     rename(NEP = ann_NEP_C)%>%
     filter(!is.na(drainage_density),
            !is.na(PrecipWs),
@@ -80,3 +81,45 @@ axis(2, at = seq(nrow(coefs):1),
                 "Terrestrial NPP")), las = 2)
 abline(v = 0)
 dev.off()
+
+
+# make a table for the SI with all of the covariates included in the model and their estimates.
+qrtab <- data.frame(qq$coef) %>%
+  mutate(variable = row.names(qq$coef)) %>% tibble() 
+
+tmp <-dat %>%
+  filter(!is.na(site_name))%>%
+  group_by(site_name) %>%
+  summarize(across(where(is.numeric), median, na.rm = T)) %>%
+  select(-reach_proportion) %>%
+  rename(NEP = ann_NEP_C)%>%
+  filter(!is.na(drainage_density),
+         !is.na(PrecipWs),
+         !is.na(Stream_PAR_sum),
+         !is.na(width_to_area)) %>%
+  select(-ann_GPP_C, -ann_ER_C, -NHD_TIDAL, -site_name, -year, -lat, -lon, -NEP, -PR)  %>%
+  summary()
+
+  summarize_all(.funs = list(min, max)) %>%
+  pivot_longer(cols = everything(), values_to = 'val', 
+               names_to = c('Variable', 'stat'), 
+               names_pattern = '(^[A-Za-z0-9*]+)_(fn[12]$)')
+  
+write_csv(qrtab, 'data_working/sparse_quantile_regression_results_raw.csv')
+
+qrtab <- read_csv('data_working/sparse_quantile_regression_results.csv')
+install.packages('kableExtra')
+library(kableExtra)
+
+table <- qrtab %>% select(-variable) %>%
+  mutate(estimate = round(estimate, digits = 3),
+         se = paste0(" $pm ",round(se, digits = 2)),
+         t_val = round(t_val, digits = 2),
+         p_val = round(p_val, digits = 2)) 
+
+table %>%
+  kbl(caption = 'Covariates and coefficient estimates for sparse quantile regression model',
+      format = 'latex',
+      col.names = c("Variable", "Estimate",  "$pm se", "t value", "p value"), 
+      align = c('l', 'r', 'l', 'r', 'r')) %>%
+  kable_classic(full_width = F, html_font = 'helvetica')
