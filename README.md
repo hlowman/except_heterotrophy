@@ -85,6 +85,11 @@ This Project is to study rivers that are exceptions to the long-standing dogma i
 **1. explore_connectivity_metrics.R**  
     - test out different derived metrics of river-landscape Carbon connectivity.
     
+**2. test_quantile_reg_models.R**
+    - runs regressions on the 95% quantile using the quantreg package in R. 
+    - models are run using different combinations of light, disturbance, and connectivity metrics
+    - plot of model coefficients sorted by Model AIC
+    
 <!-- Sparse Model -->
 ### Sparse Model
 

@@ -44,6 +44,25 @@ corrplot(cc, type = "lower", order = "original", p.mat = cc_sig$p,
          sig.level = c(0.05), insig = 'label_sig',
          pch.cex = 1, pch.col='grey20')
 
+# Example of 'why quantile regression' ####
+dat%>%
+  rename(GPP = ann_GPP_C, ER = ann_ER_C, NEP = ann_NEP_C) %>%
+  pivot_longer(cols = any_of(c('GPP', 'NEP', 'ER')), 
+               names_to = 'metab', values_to = 'gO2m2d') %>%
+  pivot_longer(cols = any_of(c('RBI', 'width_to_area', 
+                               'drainage_density_connected')), 
+               names_to = 'covariate', values_to = 'value') %>%
+  mutate(metab = factor(metab, levels = c('GPP', 'ER', 'NEP')))%>%
+  ggplot(aes(value, gO2m2d)) +
+  geom_point() +
+  facet_grid(metab~covariate, scales = 'free')+
+  geom_hline(yintercept = 0)+
+  theme_classic()+ 
+  ylab(expression(Metabolism~(gC~m^2~yr^-1)))+
+  xlab('Covariate Value')+
+  theme(panel.border = element_rect(fill = NA))
+
+
 # test quantile regression:####
 summary(lm(NEP ~ Stream_PAR_sum + PrecipWs + Disch_cv, dd))
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + PrecipWs + Disch_cv,
@@ -169,6 +188,7 @@ mod_table <- mod_table %>% arrange(C_var) %>%
          C_pch = as.numeric(factor(C_var)) + 14,
          D_pch = as.numeric(factor(D_var)))
 mod_table <- arrange(mod_table, -AIC )
+
 png('figures/quantile_regression_coefficients_grouped.png', width = 7, height = 4,
     units = 'in', res = 300)
     par(mfrow = c(1,4),
@@ -213,7 +233,43 @@ png('figures/quantile_regression_coefficients_grouped.png', width = 7, height = 
          labels = round(mod_table$AIC, 0))
     mtext('Model AIC', cex = 0.6, adj = 0.4)
 dev.off()
-# individual variable quantile regressions:
+
+
+
+#### model fits:
+mod_table
+
+qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + max_interstorm + width_to_area,
+                     tau = tau, data = dd)
+
+dd$NEP_pred <- predict(qmod, dd[,-5])
+png('figures/quantile_model_predictions.png',
+    width = 7, height = 3, units = 'in', res = 300)
+
+dd %>%
+  mutate(width_to_area = case_when(width_to_area > 4 ~ 3.57,
+                                   TRUE ~ width_to_area),
+         max_interstorm = case_when(max_interstorm > 10 ~ 2.2,
+                                    TRUE ~ max_interstorm)) %>%
+  select(Light = Stream_PAR_sum, `Width to Area` = width_to_area, 
+         `Max interstorm interval` = max_interstorm) %>%
+  mutate(across(.fns = ~ (. - min(., na.rm = T))/
+                  (max(., na.rm = T)-min(., na.rm = T)))) %>% 
+  bind_cols(select(dd, NEP, NEP_pred)) %>% 
+  pivot_longer(cols = any_of(c('Light', 'Width to Area', 
+                               'Max interstorm interval')),
+               values_to = 'Value', names_to = 'covariate') %>%
+  ggplot(aes(NEP, NEP_pred, col = Value))+
+  geom_abline(slope = 1, intercept = 0, lty = 2, col = 'grey50')+
+  geom_point() +
+  scale_color_continuous(type = 'viridis') +
+  ylab(expression(Predicted~95^th~'quantile\nNEP'~(g~O[2]~m^2~d^-1)))+
+  xlab(expression('NEP (g '~ O[2]~ m^2~ d^-1* ')'))+
+  facet_wrap(.~covariate, ncol = 3)+
+  theme_classic() +
+  theme(panel.border = element_rect(fill = NA))
+dev.off()
+# individual variable quantile regressions:####
 par(mfrow = c(3,3),
     mar = c(2,2,1,1),
     oma = c(1,3,1,1))

@@ -1,0 +1,89 @@
+Variable,estimate,se,t_val,p_val,Units,variable,min,max
+Intercept,0.908035941,0.062246207,14.58781156,0,NA,Intercept,NA,NA
+Total PAR,2.28e-12,0.022316476,1.02e-10,1,mol m$^{-2}$ s$^{-1}$,PAR_sum,10.1970027138168,16.040195101224
+Total PAR at stream surface,2.51e-10,0.022368609,1.12e-8,0.999999991,mol m$^{-2}$ s$^{-1}$,Stream_PAR_sum,1.8464075235719668,15.272468464570458
+PAR mean,1.3e-12,0.022306325,5.83e-11,1,mol m$^{-2}$ s$^{-1}$,PAR_mean,27.86,43.95
+PAR coefficient of variation,2.38e-11,0.022759618,1.05e-9,0.999999999,NA,PAR_cv,0.15,0.38
+PAR skew,1.34e-11,0.023866646,5.64e-10,1,NA,PAR_skew,-0.1,0.14
+PAR kurtosis,-0.157844682,0.023832148,-6.623183051,3.21e-10,NA,PAR_kurt,-0.060000000000000005,0.12
+PAR amplitude,5.68e-11,0.023623333,2.4e-9,0.999999998,NA,PAR_amp,1,1.34
+PAR phase,-2.49e-10,0.023702996,-1.05e-8,0.999999992,NA,PAR_phase,157.17708914321594,183.84359185377585
+PAR AR1 correlation,-4.92e-11,0.022610535,-2.18e-9,0.999999998,NA,PAR_ar1,0.085,0.523
+Water temperature mean,-2.64e-11,0.022146844,-1.19e-9,0.999999999,degrees C,Wtemp_mean,7.01,24.49
+Water temperature coefficient of variation,4.48e-11,0.022136942,2.02e-9,0.999999998,NA,Wtemp_cv,0.06,0.49
+Water temperature skew,2.45e-11,0.023918213,1.02e-9,0.999999999,NA,Wtemp_skew,-0.25,0.185
+Water temperature kurtosis,-5.23e-11,0.023776202,-2.2e-9,0.999999998,NA,Wtemp_kurt,-0.11,0.13
+Water temperature amplitude,-3.94e-10,0.02514672,-1.57e-8,0.999999988,NA,Wtemp_amp,1.03,1.4
+Water temperature phase,4.38e-11,0.028147976,1.55e-9,0.999999999,NA,Wtemp_phase,177.06132048434495,261.3225668935155
+Water temperature AR1 correlation,-7.87e-11,0.023212605,-3.39e-9,0.999999997,NA,Wtemp_ar1,0.608,0.896
+Discharge mean,5.53e-11,0.023190952,2.38e-9,0.999999998,m$^3$ s$^{-1}$,Disch_mean,0.05500000000000001,15804.1
+Discharge coefficient of variation,-3.6e-10,0.022800485,-1.58e-8,0.999999987,NA,Disch_cv,0.07,0.9
+Discharge skew,-7.83e-10,0.022725673,-3.44e-8,0.999999973,NA,Disch_skew,0.035,0.845
+Discharge kurtosis,-1.06e-10,0.022123837,-4.78e-9,0.999999996,NA,Disch_kurt,-0.06,0.73
+Discharge amplitude,5.65e-11,0.022955062,2.46e-9,0.999999998,NA,Disch_amp,0.08,1.16
+Discharge phase,-1.29e-11,0.024368507,-5.28e-10,1,NA,Disch_phase,10.303489973696973,351.79896533224803
+Discharge AR1 correlation,1.35e-11,0.022610205,5.95e-10,1,NA,Disch_ar1,0.049,0.957
+Leaf area index mean,-5.58e-11,0.023786399,-2.34e-9,0.999999998,m$^2$ m$^{-2}$,LAI_mean,0.22,4.8149999999999995
+Leaf area index coefficient of variation,1.02e-11,0.02286508,4.46e-10,1,NA,LAI_cv,0.09,0.56
+Leaf area index skew,-3.3e-11,0.023198817,-1.42e-9,0.999999999,NA,LAI_skew,-0.23,0.46
+Leaf area index kurtosis,-1.02e-10,0.021550697,-4.75e-9,0.999999996,NA,LAI_kurt,-0.23,0.36
+Leaf area index amplitude,1.13e-10,0.021662562,5.22e-9,0.999999996,NA,LAI_amp,0.87,1.41
+Leaf area index phase,1.22e-10,0.023349823,5.21e-9,0.999999996,NA,LAI_phase,73.65547969430143,226.00360253747968
+Leaf area index AR1 correlation,1.88e-11,0.022524322,8.34e-10,0.999999999,NA,LAI_ar1,0.81,0.923
+Median interstorm interval,-1.44e-11,0.027812784,-5.17e-10,1,days,med_interstorm,2,35
+Maximum interstorm interval,0.081081188,0.02451967,3.306781356,0.001119707,days,max_interstorm,9,110
+Richards Baker Flashiness Index,-5.41e-11,0.021787059,-2.48e-9,0.999999998,NA,RBI,0.01908911781911384,1.213103863923196
+Stream width,0.064080605,0.021973002,2.916333664,0.003948284,m,Width,2.10312,984.504
+Stream order,2.22e-10,0.022042413,1.01e-8,0.999999992,NA,NHD_STREAMORDE,1,10
+Stream slope,5.82e-12,0.022534567,2.58e-10,1,m m$^{-1},NHD_SLOPE,1e-5,0.02495319
+Stream width to watershed area ratio,6.92e-11,0.02102845,3.29e-9,0.999999997,m km$^{-2},width_to_area,0.01882415106418394,3.942579438059442
+Total upstream flow length,5.71e-10,0.022031807,2.59e-8,0.999999979,m,total_flow_length,1.701,2305824.25
+Connected upstream flow length,6.9e-11,0.025381928,2.72e-9,0.999999998,m,connected_flow_length,0.07140460000000036,80494.819286675
+Drainage density,-4.97e-12,0.02421597,-2.05e-10,1,m km$^{-2},drainage_density,0.07886761408271864,1.2238564515344228
+Drainage density of connected reaches,-5.41e-11,0.022531646,-2.4e-9,0.999999998,m km$^{-2},drainage_density_connected,1.6887711433568387e-5,1.3111221212232846
+MODIS annual NPP,-0.062853683,0.023377661,-2.688621514,0.007783057,gC m$^{-2}$ y$^{-1}$,MOD_ann_NPP,100,1266.674925
+Watershed area,3.45e-10,0.021867686,1.58e-8,0.999999987,km$^2$,ws_area_km2,2.24097,3130493.1879999996
+Elevation,0.184680378,0.022029581,8.38329049,9.33e-15,m,ElevWs,11.7711,2621.9526
+Total Precipitation,-9.42e-11,0.022897872,-4.11e-9,0.999999997,mm y$^{-1}$,PrecipWs,382.6129725041822,1862.9835486580105
+Total runoff,-1.12e-12,0.021935592,-5.12e-11,1,mm y$^{-1}$,RunoffWs,5.2553,1411.5631
+Precipitation-runoff ratio,1.58e-11,0.023822316,6.61e-10,0.999999999,NA,precip_runoff_ratio,0.8610198348512429,76.19813681950815
+Minimum air temperature,-9.15e-11,0.022995591,-3.98e-9,0.999999997,degrees C,TminWs,-20.019856743676648,9.542272720866189
+Maximum air temperature,-1.64e-10,0.022178497,-7.41e-9,0.999999994,degrees C,TmaxWs,10.458616911376057,28.229027242020308
+Mean air temperature,-6.5e-10,0.02240432,-2.9e-8,0.999999977,degrees C,TmeanWs,2.71616286222626,22.46000733886146
+Housing unit density (2010),-4.21e-11,0.021104353,-1.99e-9,0.999999998,units km$^{-2},HUDen2010Ws,0.096,1191.2732
+Population density (2010),-3.68e-11,0.021937233,-1.68e-9,0.999999999,people km$^{-2},PopDen2010Ws,0.4797,2840.2658
+Road density (2010),-2.98e-11,0.021173258,-1.41e-9,0.999999999,m km$^{-2},RdDensWs,0.6505,12.6455
+Percent impervious surface cover,-6.33e-11,0.021436191,-2.95e-9,0.999999998,%,Pct_impcov,0.1,55.705
+Inorganic wet deposition of nitrogen (2008),-2.29e-11,0.022416709,-1.02e-9,0.999999999,kg N ha$^{-1}$ y$^{-1}$,Inorg_N_WetDep_kgNhayr_2008,0.8518,6.6738
+Inorganic nitrogen fertilizer application,6.52e-11,0.021956424,2.97e-9,0.999999998,kg N ha$^{-1}$ y$^{-1}$,Inorg_N_fert_kgNhayr,0,78.2845
+Organic nitrogen fertilizer application,1.74e-10,0.023140197,7.54e-9,0.999999994,kg N ha$^{-1}$ y$^{-1}$,Org_N_fert_kgNhayr,0,119.8879
+Density of waste point sources,1.31e-11,0.020589245,6.36e-10,0.999999999,sources km$^{-2},Waste_point_srcs_perkm2,0,4.0616
+Dam density,-1.3100000000000001e-10,0.021954737,-5.97e-9,0.999999995,dams km$^{-2},Dam_densityperkm2,0,0.16135
+Dam total volume,3.13e-11,0.02127009,1.47e-9,0.999999999,m$^3$ km$^{-2},Dam_total_vol_m3km2,0,983180.5471
+Dam median volume,3.54e-11,0.021468115,1.65e-9,0.999999999,m$^3$ km$^{-2},Dam_normal_vol_m3km2,0,739140.307
+Water table depth,3.89e-11,0.022637527,1.72e-9,0.999999999,cm,WtDepWs,21.3673,182.88
+Percent organic matter content in soils,-1.81e-11,0.025010792,-7.23e-10,0.999999999,%,OmWs,0.2517,19.0511
+Permeability of soils,-1.79e-11,0.025587756,-6.99e-10,0.999999999,cm h$^{-1}$,PermWs,1.5641,33.3211
+Depth of soils to bedrock,-8.42e-11,0.022131854,-3.81e-9,0.999999997,cm,RckDepWs,56.9699,152.4
+Base flow index,2.6e-10,0.023170483,1.12e-8,0.999999991,NA,BFIWs,11.0389,85.4398
+Lithological hydraulic conductivity,-2.59e-12,0.022738142,-1.14e-10,1,$\mu$m s$^{-1}$,HydrlCondWs,0.0135,222.7216
+Lithological nitrogen content,-1.14e-10,0.022807774,-5.01e-9,0.999999996,%,NWs,0.0055,0.8523
+Lithological aluminum content,5.35e-11,0.021095167,2.54e-9,0.999999998,%,Al2O3Ws,0.16,15.1263
+Lithological calcium content,-3.37e-11,0.021451842,-1.57e-9,0.999999999,%,CaOWs,0.8481,44.6339
+Lithological calcium content,-3.37e-11,0.021451842,-1.57e-9,0.999999999,%,Fe2O3Ws,0.6,21.0262
+Lithological calcium content,-1.9e-11,0.023573735,-8.04e-10,0.999999999,%,CaOWs,0.8481,44.6339
+Lithological calcium content,-1.9e-11,0.023573735,-8.04e-10,0.999999999,%,Fe2O3Ws,0.6,21.0262
+Lithological potassium content,1.08e-10,0.020539712,5.25e-9,0.999999996,%,K2OWs,0.18,5.7371
+Lithological magnesium content,-4.42e-11,0.021792998,-2.03e-9,0.999999998,%,MgOWs,0.5429,20.34
+Lithological sodium content,1.39e-10,0.022106628,6.31e-9,0.999999995,%,Na2OWs,0.09,4.2332
+Lithological phosporous content,-3.47e-11,0.022888695,-1.51e-9,0.999999999,%,P2O5Ws,0.02,1.199
+Lithological sulfur content,6.75e-11,0.024457634,2.76e-9,0.999999998,%,SWs,0.012,3.4234
+Lithological silica content,3.13e-9,0.021553175,1.45e-7,0.999999884,%,SiO2Ws,1.87,71.5502
+IGBP Land Classification Type (2018),8.5e-12,0.021659766,3.93e-10,1,NA,IGBP_LC_Type1Class2018,1,17
+Percent urban land cover,-6.52e-11,0.021584313,-3.02e-9,0.999999998,%,NLCD_PctUrban,0.76,95.16
+Percent agricultural land cover,3.55e-11,0.022208226,1.6e-9,0.999999999,%,NLCD_PctAgriculture,0,95.82
+Percent forest land cover,1.79e-11,0.022443771,7.96e-10,0.999999999,%,NLCD_PctForest,0.05,96.08
+Percent barren land cover,1.11e-11,0.026882699,4.13e-10,1,%,NLCD_PctBarren,0,4.92
+Percent open water land cover,-9.97e-11,0.024848307,-4.01e-9,0.999999997,%,NLCD_PctWater,0,17.25
+Percent wetland land cover,-2.33e-12,0.022655177,-1.03e-10,1,%,NLCD_PctWetland,0,55.065
+Percent grassland land cover,2.14e-11,0.022508411,9.53e-10,0.999999999,%,NLCD_PctGrassland,0,89.63
