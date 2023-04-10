@@ -73,7 +73,8 @@ state_sf <- st_as_sf(states,
              alpha = 0.9) + # map of sites
   labs(x = "Longitude", y = "Latitude") +
   scale_color_gradientn("P:R", colors = c("#EEB99F", "#EAB64E", "#E6E600", 
-                                          "#A0D600", "#63C600", "#00A600")) +
+                                          "#A0D600", "#63C600",
+                                          "#2DB600", "#00A600")) +
                           # based on terrain.colors(n = 10) # custom colors
   scale_size_continuous("GPP") +
   theme_classic()) # remove grid
