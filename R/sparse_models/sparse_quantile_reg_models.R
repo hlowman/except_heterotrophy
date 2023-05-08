@@ -7,6 +7,7 @@
 library(tidyverse)
 library(quantreg)
 library(corrplot)
+library(viridis)
 
 dat <- read_csv('data_working/across_sites_model_data.csv')
 
@@ -37,31 +38,40 @@ dd <- dd[,-geol_vars] %>%
                     Waste_point_srcs_perkm2, connected_flow_length, 
                     total_flow_length), ~log(.+1)))%>%
     mutate(across(c(-site_name, -year), ~scale(.)[,1]))
-
-hist2 <- function(x,y){
-  hist(x, main = y)
-}
-par(mar = c(2,2,1,1),
-    mfrow = c(5,5))
-tmp <- select(dd, where(is.numeric)) 
-mapply(hist2, x = tmp, y = colnames(tmp))
+corr <- cor(dd[,c(3,4,5,7:ncol(dd))])
+png('figures/annual_corrplot.png', width = 10, height = 10, units = 'in', res = 100)
+  corrplot::corrplot(corr, method = 'color', type = 'lower',  diag = FALSE,
+                     order = 'hclust', tl.col = 'black', tl.cex = 0.6)
+dev.off()
+# hist2 <- function(x,y){
+#   hist(x, main = y)
+# }
+# par(mar = c(2,2,1,1),
+#     mfrow = c(5,5))
+# tmp <- select(dd, where(is.numeric)) 
+# mapply(hist2, x = tmp, y = colnames(tmp))
 # test sparse quantile regression:####
-summary(lm(NEP ~ Stream_PAR_sum + PrecipWs + Disch_cv, dd))
+# summary(lm(NEP ~ Stream_PAR_sum + PrecipWs + Disch_cv, dd))
+
+# generate formula that includes all covariates:
 fmlqmod <- as.formula(
-  paste('NEP ~', paste(colnames(dd[,7:ncol(dd)]), collapse = '+'), sep = ' '))
-# qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + PrecipWs + Disch_cv,
+  paste('NEP ~', paste(colnames(dd[,c(3,4,7:ncol(dd))]), collapse = '+'), sep = ' '))
+
+# regular quantile regression
 qmod <- quantreg::rq(fmlqmod,
                      tau =  0.95, 
                      data = dd)
 
+# Sparse quantile regression
 lqmod <- quantreg::rqss(fmlqmod,
                         tau =  0.95, method = 'lasso', lambda = 10,
                         data = dd)
+
 summary(lqmod, se = 'boot')
 qq <- summary(lqmod, se = 'boot')
 dd$NEPpred <- predict(lqmod, dd[,-5])
 
-library(viridis)
+# One attempt at showing model fits:
 png('figures/sparse_quantile_model_predictions.png',
     width = 6, height = 4.5, units = 'in', res = 300)
   dd %>%
@@ -86,10 +96,10 @@ dev.off()
 colnames(qq$coef)<- c('value', 'se', 't_val', 'p_val')
 coefs <- data.frame(qq$coef) %>%
   arrange((abs(value))) %>%
-  filter(p_val < 0.99) %>%
-  slice(-6) 
+  filter(p_val < 0.99) %>% # don't keep effects with p values of 1
+  slice(-6) # remove the intercept from dataframe
 
-coefs$col <- c('red', 'black', 'black', 'grey', 'grey')
+coefs$col <- c('red', 'black', 'black', 'grey', 'grey') # add column with color based on hypothesized effect
 
 png('figures/sparse_quantile_regression_results.png', width = 5, height = 4, units = 'in', res = 300)
 par(mar = c(4,7,1,1))
