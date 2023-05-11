@@ -7,14 +7,14 @@ autotrophic = across_sites_model_data %>%
   group_by(site_name) %>%
   summarize(across(where(is.numeric), median, na.rm = T)) %>% ungroup() %>% 
   mutate(code = paste(site_name, year, sep = "_")) %>% 
-  select(site_name, year, lat, lon, ann_GPP_C, ann_ER_C, ann_NEP_C,  PR,PAR_sum, Disch_cv, max_interstorm, RBI, width_to_area, PrecipWs, MOD_ann_NPP, drainage_density_connected, PAR_kurt, ElevWs, Width) %>% 
+  select(site_name, year, lat, lon, ann_GPP_C, ann_ER_C, ann_NEP_C,  PR,PAR_sum, Disch_cv, max_interstorm, RBI, width_to_area, PrecipWs, MOD_ann_NPP, drainage_density_connected, PAR_kurt, ElevWs, Width, Stream_PAR_sum) %>% 
   filter(complete.cases(across(ann_GPP_C:Width))) %>% as_tibble() %>% 
   mutate(Class = case_when(PR<1~"Heterotrophic",
                            PR>1~"Autotrophic"))
 
 
 
-autotrophic_data = autotrophic %>% select( Disch_cv, max_interstorm, RBI, width_to_area, PrecipWs, MOD_ann_NPP, drainage_density_connected, PAR_kurt, ElevWs, Width)
+autotrophic_data = autotrophic %>% select( Disch_cv, max_interstorm, RBI, width_to_area, PrecipWs, MOD_ann_NPP, drainage_density_connected, PAR_kurt, ElevWs, Width,Stream_PAR_sum)
 auto_hellinger = disttransform(autotrophic_data, method = "log")
 
 
@@ -50,7 +50,7 @@ rda_raw <- ggplot() +
   coord_fixed(ratio=1)+
   scale_alpha_manual(values = c(1,0.1))+
   
- 
+ geom_text_repel(data = sites.long1 %>% filter(PR>1.5), aes(x=axis1, y = axis2, label = site_name))+
   
   geom_mark_ellipse(data=sites.long1 %>%  mutate(Class = case_when(PR<1~"Heterotrophic",
                                                                PR>1~"Autotrophic")),
@@ -72,4 +72,7 @@ rda_raw <- ggplot() +
   theme_bw()+theme(panel.grid = element_blank())
 
 rda_raw
-           
+
+
+
+watershed_summary_data %>% filter(site_name == "nwis_13173600") %>% view()      
