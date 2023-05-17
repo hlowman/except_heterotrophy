@@ -265,9 +265,12 @@ dd %>%
   scale_color_continuous(type = 'viridis') +
   ylab(expression(Predicted~95^th~'quantile\nNEP'~(g~O[2]~m^2~d^-1)))+
   xlab(expression('NEP (g '~ O[2]~ m^2~ d^-1* ')'))+
+  scale_x_continuous(breaks=c(-4,-2,0,2,4), limits=c(-4,4))+
+  scale_y_continuous(breaks=c(-4,-2,0,2,4), limits=c(-4,4))+
   facet_wrap(.~covariate, ncol = 3)+
   theme_classic() +
-  theme(panel.border = element_rect(fill = NA))
+  theme(panel.border = element_rect(fill = NA),
+        legend.position = "bottom")
 dev.off()
 # individual variable quantile regressions:####
 par(mfrow = c(3,3),
