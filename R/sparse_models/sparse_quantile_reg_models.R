@@ -75,12 +75,16 @@ png('figures/sparse_quantile_model_predictions.png',
   ggplot(aes(NEP, NEPpred, col = Value))+
     geom_abline(slope = 1, intercept = 0, lty = 2, col = 'grey50')+
     geom_point() +
-    scale_color_continuous(type = 'viridis')+
+    scale_color_continuous(type = 'viridis',
+                           name= "Value of each predictor")+
     ylab(expression('Predicted NEP (g '~ O[2]~ m^2~ d^-1* ')'))+
     xlab(expression('NEP (g '~ O[2]~ m^2~ d^-1* ')'))+
+    scale_x_continuous(breaks=c(-4,-2,0,2,4), limits=c(-4,4))+
+    scale_y_continuous(breaks=c(-4,-2,0,2,4), limits=c(-4,4))+
     facet_wrap(.~covariate)+
     theme_classic() +
-    theme(panel.border = element_rect(fill = NA))
+    theme(panel.border = element_rect(fill = NA),
+          legend.position = "bottom")
 dev.off()
 
 colnames(qq$coef)<- c('value', 'se', 't_val', 'p_val')
