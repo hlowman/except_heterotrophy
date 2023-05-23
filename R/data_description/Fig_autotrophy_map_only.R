@@ -14,6 +14,15 @@ NEP_info_2 <- NEP_info %>% mutate(logPtoP=log(PtoR))
 
 GPP_info <- read_csv("data_working/annual_summary_data.csv")
 
+sites <- read_tsv("data_356rivers/site_data.tsv")
+
+# First, check to see if there are any sites in AK, HI, or PR.
+site_name <- unique(GPP_info$site_name)
+
+my_sites <- as.data.frame(site_name)
+
+check_sites <- left_join(my_sites, sites) # None.
+
 # Calculate mean annual GPP and mean annual P:R.
 Annual_info <- GPP_info %>%
   group_by(site_name, lat, lon) %>%
@@ -64,24 +73,28 @@ state_sf <- st_as_sf(states,
                      remove = F,
                      crs = 4269)
 
+# Set color legend break points.
+my_breaks <- c(0.05, 0.15, 0.4, 1)
+
 (sitemap <- ggplot(state_sf) + # base plot
   geom_polygon(aes(x = long, y = lat, group = group), 
                fill = "white", color = "black") + # map of states
   geom_point(data = AI_sf, aes(x = lon, y = lat,
                                color = mean_PR_annual, 
                                size = mean_GPP_annual),
-             alpha = 0.9) + # map of sites
+             alpha = 0.95) + # map of sites
   labs(x = "Longitude", y = "Latitude") +
-  scale_color_gradientn("P:R", colors = c("#EEB99F", "#EAB64E", "#E6E600", 
-                                          "#A0D600", "#63C600",
-                                          "#2DB600", "#00A600")) +
+  scale_color_gradientn("Mean Annual P:R", colors = c("#F0C9C0", "#EDB48E", 
+                                          "#E8C32E", "#E6E600", "#00A600"),
+                                          trans = "log",
+                        breaks = my_breaks, labels = my_breaks) +
                           # based on terrain.colors(n = 10) # custom colors
-  scale_size_continuous("GPP") +
+  scale_size_continuous("Mean Annual\nCumulative GPP") +
   theme_classic()) # remove grid
 
 # export exploratory figures
 # ggsave(("figures/Annual_GPP_PR_USmap.png"),
-#        width = 20,
+#        width = 22,
 #        height = 11,
 #        units = "cm"
 # )
