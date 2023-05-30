@@ -299,14 +299,6 @@ setlist2 = c('Elevation', 'PRISM_1981_2010', 'NLCD2011', 'NLCD2016', 'Runoff',
              'AgriculturalNitrogen', 'STATSGO_Set2', 'NADP', 'GeoChemPhys1',
              'GeoChemPhys2', 'GeoChemPhys3', 'BFI')
 
-# use these lines for adding to an already downloaded streamcat file:
-# streamcat_data <- read_csv('data_ignored/streamcat/streamcat_data.csv')
-# sites_sub <- sites_nhd %>% filter(!(COMID %in% unique(streamcat_data$COMID)))
-# streamcat_data1 = streamcat_bulk(sites_sub, setlist2)
-# streamcat_data <- bind_rows(streamcat_data, streamcat_data1)
-# write_csv(streamcat_data, 'data_ignored/streamcat/streamcat_data.csv')
-
-#save in chunks, this is a long process and a lot of data.
 streamcat_data = streamcat_bulk(sites_nhd[!is.na(sites_nhd$COMID),], setlist2)
 
 #pick out the variables you want, then join them to your site data
@@ -326,33 +318,3 @@ sites_nhd = sites_nhd[! duplicated(sites_nhd$River),]
 
 #save yer data
 write_csv(sites_nhd, 'data_working/literature_streams_watershed_summary_data.csv')
-
-
-# # 4. get MODIS data (this section incomplete) ####
-# # VNP13A1
-# mt_bands("MOD13Q1")
-# subset1 = mt_subset(product = "MOD13Q1",
-#                     lat = 40,
-#                     lon = -110,
-#                     band = "250m_16_days_NDVI",
-#                     start = "2004-01-01",
-#                     end = "2004-02-01",
-#                     km_lr = 10,
-#                     km_ab = 10,
-#                     site_name = "testsite",
-#                     internal = TRUE,
-#                     progress = FALSE)
-# 
-# dfx = data.frame("site_name" = paste("test",1:2))
-# dfx$lat = 40
-# dfx$lon = -110
-# 
-# # test batch download
-# subsets = mt_batch_subset(dfx = dfx,
-#                           product = "MOD11A2",
-#                           band = "LST_Day_1km",
-#                           internal = TRUE,
-#                           start = "2004-01-01",
-#                           end = "2004-02-01")
-# 
-# 

@@ -3,6 +3,7 @@
 
 library(tidyverse)
 library(dataRetrieval)
+library(moments)
 # install.packages('hydrostats')
 # library(hydrostats)
 # the package EcoHydRology is no longer available on Cran, but this is an old version
@@ -146,6 +147,8 @@ for(i in 1:length(q_siteyears_split)){
   dat <- q_siteyears_split[[i]]
   d <- calc_storm_gaps(dat, threshold = 0.75)
   d$RBI <- calc_RBI(dat)
+  d$Disch_mean <- mean(dat$discharge_m3s)
+  d$Disch_cv <- sd(dat$discharge_m3s)/mean(dat$discharge_m3s)
   d$site_no <- dat$site_no[1]
   d$Year = dat$year[1]
   
@@ -155,7 +158,8 @@ for(i in 1:length(q_siteyears_split)){
 bf <- relocate(bf, c(site_no, Year))
 
 bf_sum <- bf %>% group_by(site_no) %>%
-  summarize(across(.cols = any_of(c('med_interstorm', 'max_interstorm', 'RBI')), 
+  summarize(across(.cols = any_of(c('med_interstorm', 'max_interstorm', 'RBI', 
+                                    'Disch_mean', 'Disch_cv')), 
                    .fns = list(mean = ~mean(.), sd = ~sd(.), median = ~median(.)))) 
   
 
@@ -164,12 +168,18 @@ ggplot(bf, aes(Year, RBI)) + geom_line() +
   facet_wrap(.~site_no, scales = 'free_x')
 
 sites_nhd <- read_csv('data_working/literature_streams_watershed_summary_data.csv')
+# add width based on google earth
 sites_nhd$width_m <- c(35, 5, NA, 40, 30, NA, 20, 110, 5, 20, NA, 5, 12, 35)
-sites_nhd <- left_join(sites_nhd, 
-          select(bf_sum, 
+# add publication year
+sites_nhd$year <- c(2016, 1972, 2011, 1957, 2003, 2003, 2012, 2017, 2008, 2020, 2017, 2017, 2020, 2008)
+# sites_nhd <- select(sites_nhd, -max_interstorm, -RBI, -LAI, -PAR_inc, -PAR_surface)%>% 
+sites_nhd <- sites_nhd %>%
+          left_join(select(bf_sum, 
                  nwis_gage = site_no,
                  max_interstorm = max_interstorm_median,
-                 RBI = RBI_median),
+                 RBI = RBI_median, 
+                 Disch_mean = Disch_mean_median,
+                 Disch_cv = Disch_cv_median),
           by = 'nwis_gage')
 
 # add light data:
@@ -184,16 +194,36 @@ full_ys <- light %>%
 light_years <- light %>% 
   filter(siteyear %in% full_ys$siteyear) %>%
   group_by(site, year) %>%
-  summarize(LAI = mean(LAI),
-            PAR_inc = mean(PAR_inc),
-            PAR_surface = mean(PAR_surface))
+  summarize(LAI_mean = mean(LAI),
+            PAR_mean = mean(PAR_inc),
+            PAR_sum = sum(PAR_inc),
+            Stream_PAR_sum = sum(PAR_surface),
+            PAR_kurt = kurtosis(PAR_inc))
 light <- light_years %>%
   group_by(site) %>%
-  summarize(LAI = mean(LAI),
-            PAR_inc = mean(PAR_inc),
-            PAR_surface = mean(PAR_surface)) %>%
+  summarize(LAI = mean(LAI_mean),
+            PAR_mean = mean(PAR_mean),
+            PAR_sum = mean(PAR_sum),
+            Stream_PAR_sum = mean(Stream_PAR_sum),
+            PAR_kurt = mean(PAR_kurt)) %>%
   mutate(nwis_gage = substr(site, 6, 13)) %>%
   select(-site)
+  
+# add MOdis Annual NPP
+NPP <- read_csv('data_ignored/light/MODIS/NPP/autotrophy-NPP-MOD17A3HGF-006-results.csv')
+NPP <- NPP %>% select(ID, Date, NPP = MOD17A3HGF_006_Npp_500m,
+               NPP_QC = MOD17A3HGF_006_Npp_QC_500m) %>%
+    # filter(NPP_QC == 250) # this indicates the site is urban and NPP can't be estimated
+    #                       # for our purposes, we will set it to zero. This is a highly
+    #                       # developed site, so it is not a bad assumption.
+    mutate(NPP = case_when(NPP_QC == 250 ~ 0,
+                           TRUE ~ NPP)) %>%
+    group_by(ID) %>%
+    summarize(MOD_ann_NPP = mean(NPP)) %>%
+    mutate(nwis_gage = substr(ID, 5, 12))
+
+sites_nhd <- left_join(sites_nhd, NPP, by = 'nwis_gage') %>%
+    select(-ID)
 
 sites_nhd <- left_join(sites_nhd, light, by = 'nwis_gage')
 

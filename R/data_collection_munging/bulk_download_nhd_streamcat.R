@@ -327,7 +327,8 @@ sites_nhd <- read_csv( 'data_ignored/nhd_site_dat.csv')
 # 3. get StreamCat data ####
 
 #find out which streamcat datasets are available (case insensitive)
-query_streamcat_datasets()
+query_streamcat_datasets() %>% grep()
+grep('gpp', query_streamcat_datasets(), ignore.case = TRUE, value = TRUE)
 query_streamcat_datasets('ripbuf')
 
 #construct vector of streamcat datasets to acquire (check variable list for deets)
