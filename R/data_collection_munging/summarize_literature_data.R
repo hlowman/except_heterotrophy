@@ -10,7 +10,6 @@ library(sf)
 # load data
 # this subset contains only the siteyears that have decent data and coverage (according to Bernhardt 2022)
 dat <- read_csv('data_working/literature_streams_watershed_summary_data.csv')
-d2 <- read_csv('data_working/annual_summary_data.csv')
 
 # Condense categories and subset to useful columns ####
 # Combine streamcat similar land use categories:
@@ -169,13 +168,15 @@ lit_dat <- left_join(lit_dat, select(sites, nwis_gage,
            drainage_density_connected = connected_flow_length/ws_area_km2)
 
 lit_dat <- lit_dat %>%
-  mutate(width_to_area = Width/sqrt(ws_area_km2))
+  mutate(width_to_area = Width/sqrt(ws_area_km2),
+         Stream_PAR_sum = Stream_PAR_sum/365/1000, # convert units to match Bernhardt (mol/m2/d)
+         MOD_ann_NPP = MOD_ann_NPP * 1000)         # kg C to g C /m2/y
            
 
 write_csv(lit_dat, 'data_working/literature_streams_watershed_summary_data.csv')
 # Pull out relevant variables
 # first, fill in needed but missing values:
-
+lit_dat <- read_csv('data_working/literature_streams_watershed_summary_data.csv')
 # From US climate data.com: 
 lit_dat$PrecipWs[lit_dat$River == 'SF Humboldt River'] <- 251.7 # mm
 # From wikipedia:
