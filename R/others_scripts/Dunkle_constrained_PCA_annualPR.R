@@ -12,6 +12,8 @@ library(tidyverse);library(vegan);library(ggvegan);library(BiodiversityR);librar
 
 across_sites_model_data <- read.csv(here::here("data_working/across_sites_model_data.csv"), header=TRUE, fileEncoding = "UTF-8-BOM")
 
+literature_data <- read.csv(here::here("data_working/literature_streams_data_for_PCA.csv"), header=TRUE, fileEncoding = "UTF-8-BOM")
+
 
 autotrophic = across_sites_model_data %>%
   filter(!is.na(site_name))%>%
