@@ -16,6 +16,7 @@ across_sites_model_data <- read.csv(here::here("data_working/across_sites_model_
 
 literature_data <- read.csv(here::here("data_working/literature_streams_data_for_PCA.csv"), header=TRUE, fileEncoding = "UTF-8-BOM")
 
+literature_data2<- literature_data %>%  mutate(Class = "Literature")
 
 autotrophic = across_sites_model_data %>%
   filter(!is.na(site_name))%>%
@@ -34,7 +35,7 @@ autotrophic_data = autotrophic %>% select( Disch_cv, max_interstorm, RBI, width_
 autotrophic_data2 = autotrophic %>% select( site_name, year, Disch_cv, max_interstorm, RBI, width_to_area, PrecipWs, MOD_ann_NPP, drainage_density_connected, PAR_kurt, ElevWs, Width,Stream_PAR_sum)
 
 
-litauto<-dplyr::bind_rows(autotrophic, literature_data)
+litauto<-dplyr::bind_rows(autotrophic, literature_data2)
 
 ## additional dataframes #
 
@@ -249,7 +250,7 @@ rda_litauto <- ggplot() +
   geom_point(data=litsiteslong2, aes(x=axis1, y=axis2), color="blue", 
              size=2, show.legend = T) +
   geom_text(data = litsiteslong2, 
-            mapping = aes(x=axis1, y=axis2, label = Type1), 
+            mapping = aes(x=axis1, y=axis2, label = River), 
             inherit.aes = FALSE, color="blue") +
   geom_point(data=autositeslong2 %>%  mutate(Class = case_when(PR<1~"Heterotrophic",
                                                               PR>1~"Autotrophic")), 
@@ -279,4 +280,5 @@ rda_litauto <- ggplot() +
 
 
 
-
+ggplot(litauto, aes(x = Disch_cv, fill = Class)) + 
+  geom_histogram()
