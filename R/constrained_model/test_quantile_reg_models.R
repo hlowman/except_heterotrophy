@@ -4,6 +4,7 @@
 
 library(tidyverse)
 library(quantreg)
+library(Qtools)
 library(corrplot)
 
 dat <- read_csv('data_working/across_sites_model_data.csv')
@@ -45,7 +46,7 @@ corrplot(cc, type = "lower", order = "original", p.mat = cc_sig$p,
          pch.cex = 1, pch.col='grey20')
 
 # Example of 'why quantile regression' ####
-dat%>%
+dat %>%
   rename(GPP = ann_GPP_C, ER = ann_ER_C, NEP = ann_NEP_C) %>%
   pivot_longer(cols = any_of(c('GPP', 'NEP', 'ER')), 
                names_to = 'metab', values_to = 'gO2m2d') %>%
@@ -66,15 +67,21 @@ dat%>%
 # test quantile regression:####
 summary(lm(NEP ~ Stream_PAR_sum + PrecipWs + Disch_cv, dd))
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + PrecipWs + Disch_cv,
-                     tau = c(0.05, 0.5, 0.95),
+                     tau = c(0.1, 0.5, 0.9),
                      data = dd)
 summary(qmod, se = 'boot')
 anova(qmod, test = 'Wald', joint = FALSE)
+eps <- 0.05
+kt <- KhmaladzeTest(NEP ~  Disch_cv, data = dd, 
+              taus = seq(0.05, 0.95, by = 0.01),
+              trim = c(eps, 1 - eps))
 
-plot(qmod)
-
+KhmaladzeFormat(kt, epsilon = eps)
+# 
+# plot(qmod)
+# plot(kt)
 # build table of different model fits
-add_mod <- function(qmod, mod_table, D = TRUE, C = TRUE){
+add_mod <- function(qmod, mod_table, D = TRUE, C = TRUE, data, y = 'NEP'){
     ss <- summary(qmod, se = 'boot')
     qm <- data.frame(mod = as.character(qmod$formula)[3],
                      tau = ss$tau,
@@ -110,74 +117,89 @@ add_mod <- function(qmod, mod_table, D = TRUE, C = TRUE){
     }
     
     qm$AIC = AIC(qmod)
+    qm$R1 = calc_R1(qmod, tau, data)
     mod_table <- bind_rows(mod_table, qm)
 
     return(mod_table)
 }
 
+calc_R1 <- function(qmod, tau, data, y = 'NEP'){
+  rho <- function(u,tau=.5) u*(tau - (u < 0))
+  qmod0 <- quantreg::rq(paste0(y,' ~ 1'),
+                       tau = tau, data = data)
+  
+  V_tilde <- sum(rho(qmod0$resid, qmod0$tau))
+  V_hat <- sum(rho(qmod$resid, qmod$tau))
+  
+  R1 = 1 - V_hat/V_tilde
+  
+  return(R1)
+}
+
 mod_table <- data.frame()
 tau = 0.95
-
+# dd$NEP2 <- dd$NEP
+# dd$NEP <- dd$PR
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table, C = FALSE, D = FALSE)
+mod_table <- add_mod(qmod, mod_table, C = FALSE, D = FALSE, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + log_RBI,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table, C = FALSE)
+mod_table <- add_mod(qmod, mod_table, C = FALSE, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + Disch_cv,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table, C = FALSE)
+mod_table <- add_mod(qmod, mod_table, C = FALSE, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + max_interstorm,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table, C = FALSE)
+mod_table <- add_mod(qmod, mod_table, C = FALSE, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + MOD_ann_NPP,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table, D = FALSE)
+mod_table <- add_mod(qmod, mod_table, D = FALSE, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + PrecipWs,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table, D = FALSE)
+mod_table <- add_mod(qmod, mod_table, D = FALSE, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + drainage_density_connected,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table, D = FALSE)
+mod_table <- add_mod(qmod, mod_table, D = FALSE, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + width_to_area,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table, D = FALSE)
+mod_table <- add_mod(qmod, mod_table, D = FALSE, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + log_RBI + MOD_ann_NPP,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table)
+mod_table <- add_mod(qmod, mod_table, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + log_RBI + PrecipWs,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table)
+mod_table <- add_mod(qmod, mod_table, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + log_RBI + drainage_density_connected,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table)
+mod_table <- add_mod(qmod, mod_table, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + log_RBI + width_to_area,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table)
+mod_table <- add_mod(qmod, mod_table, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + Disch_cv + MOD_ann_NPP,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table)
+mod_table <- add_mod(qmod, mod_table, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + Disch_cv + PrecipWs,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table)
+mod_table <- add_mod(qmod, mod_table, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + Disch_cv + drainage_density_connected,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table)
+mod_table <- add_mod(qmod, mod_table, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + Disch_cv + width_to_area,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table)
+mod_table <- add_mod(qmod, mod_table, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + max_interstorm + MOD_ann_NPP,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table)
+mod_table <- add_mod(qmod, mod_table, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + max_interstorm + PrecipWs,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table)
+mod_table <- add_mod(qmod, mod_table, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + max_interstorm + drainage_density_connected,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table)
+mod_table <- add_mod(qmod, mod_table, data = dd)
 qmod <- quantreg::rq(NEP ~ Stream_PAR_sum + max_interstorm + width_to_area,
                      tau = tau, data = dd)
-mod_table <- add_mod(qmod, mod_table)
+mod_table <- add_mod(qmod, mod_table, data = dd)
 
 mod_table <- mod_table %>% arrange(C_var) %>%
   mutate(C_col = case_when(C_var == 'width_to_area' ~ 'black',
@@ -188,8 +210,11 @@ mod_table <- mod_table %>% arrange(C_var) %>%
          C_pch = as.numeric(factor(C_var)) + 14,
          D_pch = as.numeric(factor(D_var)))
 mod_table <- arrange(mod_table, -AIC )
+mod_table
+write_csv(mod_table, 'data_working/constrained_quantile_regression_results_NEP.csv')
+write_csv(mod_table, 'data_working/constrained_quantile_regression_results_PR.csv')
 
-png('figures/quantile_regression_coefficients_grouped.png', width = 7, height = 4,
+png('figures/quantile_regression_coefficients_grouped_NEP.png', width = 7, height = 4,
     units = 'in', res = 300)
     par(mfrow = c(1,4),
         mar = c(4,0.3,5,0.3),
@@ -230,10 +255,55 @@ png('figures/quantile_regression_coefficients_grouped.png', width = 7, height = 
     plot(rep(0, nrow(mod_table)), seq(1:nrow(mod_table)), ann = FALSE, type = 'n',
          axes = FALSE, xlim = c(-1,2))
     text(rep(0, nrow(mod_table)), seq(1:nrow(mod_table)),
-         labels = round(mod_table$AIC, 0))
-    mtext('Model AIC', cex = 0.6, adj = 0.4)
+         labels = paste(round(mod_table$AIC, 0), round(mod_table$R1, 2), sep = ",   "))
+    mtext('Model', cex = 0.6, adj = 0.29, line = 1)
+    mtext('AIC, R1', cex = 0.6, adj = 0.29)
 dev.off()
-
+png('figures/quantile_regression_coefficients_grouped_PR.png', width = 7, height = 4,
+    units = 'in', res = 300)
+    par(mfrow = c(1,4),
+        mar = c(4,0.3,5,0.3),
+        oma = c(1,1,2,1))
+    
+    plot(mod_table$L_mean, seq(1:nrow(mod_table)), xlim = c(-0.4, 1.4), pch = 19,
+         xlab = expression(paste('Light (', beta[1], ')')), yaxt = 'n', bty = 'n')
+    segments(x0 = mod_table$L_mean - mod_table$L_se, y0 = seq(1:nrow(mod_table)),
+             x1 = mod_table$L_mean + mod_table$L_se, y1 = seq(1:nrow(mod_table)))
+    abline(v = 0)
+    mtext('Coefficient', line = 3.1, adj = 0)
+    mtext('Estimates', line = 1.9, adj = 0)
+    plot(mod_table$D_mean, seq(1:nrow(mod_table)), xlim = c(-.9, 0.9), 
+         pch = mod_table$D_pch, col = mod_table$D_col, 
+         xlab = expression(paste('Distrubance (', beta[2], ')')),
+         yaxt = 'n', bty = 'n')
+    segments(x0 = mod_table$D_mean - mod_table$D_se, y0 = seq(1:nrow(mod_table)),
+             x1 = mod_table$D_mean + mod_table$D_se, y1 = seq(1:nrow(mod_table)),
+             col = mod_table$D_col)
+    abline(v = 0)
+    legend(x = -0.1, y = nrow(mod_table) + 6, 
+           legend = c('max interstorm', 'CV discharge', 'RBI'),
+           pch = c(3, 2, 1), col = c('black', 'brown3', 'brown3'),
+           bty = 'n', xpd = TRUE)
+    plot(mod_table$C_mean, seq(1:nrow(mod_table)), xlim = c(-.9, 0.9), 
+         pch = mod_table$C_pch, col = mod_table$C_col, 
+         xlab = expression(paste('Connectivity (', beta[3], ')')),
+         yaxt = 'n', bty = 'n')
+    segments(x0 = mod_table$C_mean - mod_table$C_se, y0 = seq(1:nrow(mod_table)),
+             x1 = mod_table$C_mean + mod_table$C_se, y1 = seq(1:nrow(mod_table)), 
+             col = mod_table$C_col)
+    abline(v = 0)
+    legend(x = -0.5, y = nrow(mod_table) + 6, 
+           legend = c('width to area', 'precipitation',
+                      'terrestrial NPP', 'con. drainage dens'),
+           pch = c(18, 17, 16, 15), col = c('black', rep('brown3', 3)),
+           bty = 'n', xpd = TRUE)
+    plot(rep(0, nrow(mod_table)), seq(1:nrow(mod_table)), ann = FALSE, type = 'n',
+         axes = FALSE, xlim = c(-1,2))
+    text(rep(0, nrow(mod_table)), seq(1:nrow(mod_table)),
+         labels = paste(round(mod_table$AIC, 0), signif(mod_table$R1, 2), sep = ",   "))
+    mtext('Model', cex = 0.6, adj = 0.29, line = 1)
+    mtext('AIC, R1', cex = 0.6, adj = 0.29)
+dev.off()
 
 
 #### model fits:
