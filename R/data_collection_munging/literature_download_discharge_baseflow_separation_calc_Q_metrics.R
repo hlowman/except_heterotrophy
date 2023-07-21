@@ -4,6 +4,7 @@
 library(tidyverse)
 library(dataRetrieval)
 library(moments)
+source('R/data_collection_munging/functions_calc_mag7.R')
 # install.packages('hydrostats')
 # library(hydrostats)
 # the package EcoHydRology is no longer available on Cran, but this is an old version
@@ -134,6 +135,7 @@ calc_RBI <- function(dat){
   
 }
 
+
 # for(i in 1:length(lotic_siteyears_split)){
 #   plot_bf_separation(lotic_siteyears_split[[923]])
 # }
@@ -143,23 +145,34 @@ calc_RBI <- function(dat){
 
 # calc storm intervals:
 bf <- data.frame()
+
 for(i in 1:length(q_siteyears_split)){
-  dat <- q_siteyears_split[[i]]
+  dat <- q_siteyears_split[[i]] %>%
+    mutate(DOY = as.numeric(format(Date, '%j')))
   d <- calc_storm_gaps(dat, threshold = 0.75)
   d$RBI <- calc_RBI(dat)
-  d$Disch_mean <- mean(dat$discharge_m3s)
-  d$Disch_cv <- sd(dat$discharge_m3s)/mean(dat$discharge_m3s)
+  # d$Disch_mean <- mean(dat$discharge_m3s)
+  # d$Disch_cv <- sd(dat$discharge_m3s)/mean(dat$discharge_m3s)
+  # d$Disch_amp <- max(dat$discharge_m3s) - min(dat$discharge_m3s)
+  # d$Disch_ar1 <- acf(dat$discharge_m3s, plot = F)$acf[2]
   d$site_no <- dat$site_no[1]
   d$Year = dat$year[1]
   
+  row <- calculate_mag7(dat, 'discharge_m3s', standardize = 'yes')
+  colnames(row) <- paste0('Disch_', colnames(row))
+
+  d <- bind_cols(d, row)
   bf <- bind_rows(bf, d)
 }
 
+
 bf <- relocate(bf, c(site_no, Year))
+ggplot(bf, aes(Year, Disch_cv, col = site_no)) +
+  geom_point() + geom_line()
 
 bf_sum <- bf %>% group_by(site_no) %>%
   summarize(across(.cols = any_of(c('med_interstorm', 'max_interstorm', 'RBI', 
-                                    'Disch_mean', 'Disch_cv')), 
+                                    'Disch_mean', 'Disch_cv', 'Disch_amp', 'Disch_ar1')), 
                    .fns = list(mean = ~mean(.), sd = ~sd(.), median = ~median(.)))) 
   
 
@@ -167,7 +180,7 @@ bf_sum <- bf %>% group_by(site_no) %>%
 ggplot(bf, aes(Year, RBI)) + geom_line() +
   facet_wrap(.~site_no, scales = 'free_x')
 
-sites_nhd <- read_csv('data_working/literature_streams_watershed_summary_data.csv')
+sites_nhd <- read_csv('data_working/literature_streams_watershed_summary_data_0.csv')
 # add width based on google earth
 sites_nhd$width_m <- c(35, 5, NA, 40, 30, NA, 20, 110, 5, 20, NA, 5, 12, 35)
 # add publication year
@@ -179,7 +192,9 @@ sites_nhd <- sites_nhd %>%
                  max_interstorm = max_interstorm_median,
                  RBI = RBI_median, 
                  Disch_mean = Disch_mean_median,
-                 Disch_cv = Disch_cv_median),
+                 Disch_cv = Disch_cv_median,
+                 Disch_amp = Disch_amp_median,
+                 Disch_ar1 = Disch_ar1_median),
           by = 'nwis_gage')
 
 # add light data:
@@ -191,21 +206,34 @@ full_ys <- light %>%
   summarize(n = n()) %>%
   filter(n == 365)
 
-light_years <- light %>% 
-  filter(siteyear %in% full_ys$siteyear) %>%
+light <- light %>% 
+  filter(siteyear %in% full_ys$siteyear) 
+
+light_years <- light %>%
   group_by(site, year) %>%
   summarize(LAI_mean = mean(LAI),
             PAR_mean = mean(PAR_inc),
             PAR_sum = sum(PAR_inc),
-            Stream_PAR_sum = sum(PAR_surface),
-            PAR_kurt = kurtosis(PAR_inc))
+            Stream_PAR_sum = sum(PAR_surface)) %>%
+  mutate(PAR_kurt = NA_real_)
+
+for(i in 1:nrow(full_ys)){
+  dat <- filter(light,
+                site == light_years$site[i],
+                year == light_years$year[i]) %>%
+    mutate(DOY = as.numeric(format(date, '%j')))
+  PAR_kurt <- calculate_mag7(data.frame(dat), 'PAR_inc', standardize = 'yes')[4]
+  light_years$PAR_kurt[i] <- unlist(PAR_kurt) 
+  
+}
+
 light <- light_years %>%
   group_by(site) %>%
-  summarize(LAI = mean(LAI_mean),
-            PAR_mean = mean(PAR_mean),
-            PAR_sum = mean(PAR_sum),
-            Stream_PAR_sum = mean(Stream_PAR_sum),
-            PAR_kurt = mean(PAR_kurt)) %>%
+  summarize(LAI = median(LAI_mean),
+            PAR_mean = median(PAR_mean),
+            PAR_sum = median(PAR_sum),
+            Stream_PAR_sum = median(Stream_PAR_sum),
+            PAR_kurt = median(PAR_kurt)) %>%
   mutate(nwis_gage = substr(site, 6, 13)) %>%
   select(-site)
   
@@ -227,4 +255,5 @@ sites_nhd <- left_join(sites_nhd, NPP, by = 'nwis_gage') %>%
 
 sites_nhd <- left_join(sites_nhd, light, by = 'nwis_gage')
 
-write_csv(sites_nhd, 'data_working/literature_streams_watershed_summary_data.csv')
+write_csv(sites_nhd, 'data_working/literature_streams_watershed_summary_data_1.csv')
+

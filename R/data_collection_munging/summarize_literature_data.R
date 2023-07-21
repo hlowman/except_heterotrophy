@@ -9,7 +9,7 @@ library(sf)
 
 # load data
 # this subset contains only the siteyears that have decent data and coverage (according to Bernhardt 2022)
-dat <- read_csv('data_working/literature_streams_watershed_summary_data.csv')
+dat <- read_csv('data_working/literature_streams_watershed_summary_data_1.csv')
 
 # Condense categories and subset to useful columns ####
 # Combine streamcat similar land use categories:
@@ -27,11 +27,7 @@ nlcd_vars <- sc_vars %>% filter(grepl('^NLCD201[1,6]', Data.Location),
 #         grassland (shrub/scrub, grassland/herbaceous)
 
 d <- dat %>% 
-  mutate(NLCD_PctUrban = case_when(year < 2016 ~ PctUrbHi2011Ws + PctUrbMd2011Ws 
-                                   + PctUrbLo2011Ws + PctUrbOp2011Ws,
-                                   year >= 2016 ~ PctUrbHi2016Ws + PctUrbMd2016Ws 
-                                   + PctUrbLo2016Ws + PctUrbOp2016Ws),
-         NLCD_PctAgriculture = case_when(year < 2016 ~ PctCrop2011Ws + PctHay2011Ws,
+  mutate(NLCD_PctAgriculture = case_when(year < 2016 ~ PctCrop2011Ws + PctHay2011Ws,
                                 year >= 2016 ~ PctCrop2016Ws + PctHay2016Ws),
          NLCD_PctForest = case_when(year < 2016 ~ PctDecid2011Ws + 
                                       PctConif2011Ws + PctMxFst2011Ws,
@@ -89,7 +85,7 @@ lit_dat <- d %>%
 ################################################################################
 WGS84 = 4326
 dams <- read_csv('data_ignored/nabd_dams.csv') %>% 
-  st_as_sf(coords = c('lon', 'lat'), crs = WGS84)
+  sf::st_as_sf(coords = c('lon', 'lat'), crs = WGS84)
 sites <- filter(lit_dat, !(River %in% c('Big Springs', 'Elijas Creek', 'La Choza')))
 # functions for working with dams dataset:
 COMID <- sites$COMID[1]
@@ -101,7 +97,7 @@ flowline <- nhdplusTools::navigate_nldi(list(featureSource = 'comid',
                                              featureID = COMID),
                                         mode = 'upstreamTributaries',
                                         data_source = '')
-st_as_sf(sites[1,], coords = c('Longitude', 'Latitude'), crs = WGS84) %>%
+sf::st_as_sf(sites[1,], coords = c('Longitude', 'Latitude'), crs = WGS84) %>%
   mapview::mapview()+ 
   mapview::mapview(flowline)
 
@@ -184,8 +180,10 @@ lit_dat$ElevWs[lit_dat$River == 'SF Humboldt River'] <- 1544 # meters
 
 lit_sum <- lit_dat %>%
   filter(!(River %in% c('Big Springs', 'Elijas Creek', 'La Choza'))) %>%
-  select(River, Type1, Type2, nwis_gage, Width, PAR_kurt, width_to_area, PrecipWs, MOD_ann_NPP,
-         RBI, Disch_cv, drainage_density_connected, ElevWs, Stream_PAR_sum, 
-         max_interstorm) 
+  # mutate(PAR_sum = PAR_sum * 0.001/365) %>%
+  select(River, lat = Latitude, lon = Longitude, Type1, Type2, nwis_gage, 
+         Width, PAR_kurt, width_to_area, PrecipWs, MOD_ann_NPP,
+         RBI, Disch_cv, Disch_amp, Disch_ar1, drainage_density_connected, 
+         ElevWs, Stream_PAR_sum, TmeanWs, max_interstorm) 
 
 write_csv(lit_sum, 'data_working/literature_streams_data_for_PCA.csv')
