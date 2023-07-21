@@ -162,7 +162,7 @@ query_streamcat_datasets = function(keyword=NULL){
 #this function acquires streamcat data for a single site by NHDPlusV2 COMID.
 streamcat_from_comid = function(USstate, COMID, dataset){
   
-  ftpdir = paste0('ftp://newftp.epa.gov/EPADataCommons/ORD/',
+  ftpdir = paste0('https://gaftp.epa.gov/epadatacommons/ORD/',
                   'NHDPlusLandscapeAttributes/StreamCat/States/')
   zip_name = paste0(dataset, '_', USstate, '.zip')
   
@@ -234,7 +234,7 @@ sites$COMID = unlist(mapply(comid_from_point, sites$Latitude,
 
 
 # add state abbreviations for streamcat:
-sites <- rename(sites, region = US_State)
+sites <- dplyr::rename(sites, region = US_State)
 
 #VPU == NHD vector processing unit. NHDPlusV2 data are downloaded per VPU.
 #add VPUs to your site table and determine reach proportions.
@@ -317,4 +317,4 @@ sites_nhd = sites_nhd %>%
 sites_nhd = sites_nhd[! duplicated(sites_nhd$River),]
 
 #save yer data
-write_csv(sites_nhd, 'data_working/literature_streams_watershed_summary_data.csv')
+write_csv(sites_nhd, 'data_working/literature_streams_watershed_summary_data_0.csv')
