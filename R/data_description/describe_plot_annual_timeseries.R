@@ -1,10 +1,10 @@
 # Patterns in Annual Autotrophy
 # Alice Carter et al.
 
-# ct testing stuff
-
 # Describe the patterns in metabolism across all siteyears with at least 60% coverage
 # Dataset used is the gap-filled data from the Bernhardt data release
+
+#### Setup ####
 
 # Load packages.
 library(tidyverse)
@@ -12,7 +12,13 @@ library(tidyverse)
 # Load data.
 dat <- readRDS('data_356rivers/high_quality_daily_metabolism_with_SP_covariates.rds')
 
+#### Summaries ####
+
+##### Autotrophic sites #####
+
 # Descriptive Statistics and data distributions
+# The dataset here uses gap-filled GPP and ER values, to match what is used in
+# quantile regression modeling efforts for annual productivity estimates.
 ann <- dat %>%
   group_by(site_name, year) %>%
   summarize(across(any_of(ends_with('filled')), sum, na.rm = T)) %>%
@@ -21,6 +27,7 @@ ann <- dat %>%
 unique(ann$site_name)
 # 238 sites total
 
+# Figure of all sites with autotrophic ones colored.
 png('figures/distribution_annual_NEP.png', width = 600, height = 400)
 par(mfrow = c(1, 2), mar = c(5,2,3,1))
 plot(density(ann$NEP), xlim = c(-6200, 2000), main = '', yaxt = 'n',
@@ -48,15 +55,68 @@ polygon(c(xdens_ut, rev(xdens_ut)), c(ydens_ut, rep(0, length(ydens_ut))),
 lines(dd)
 par(mfrow = c(1,1), new = T)
 mtext(paste0('Autotrophic site years = ',
-             100 * round(length(which(ann$NEP>0))/nrow(ann),2), 
+             100 * round(length(which(ann$NEP>0))/nrow(ann),3), 
              '% of ', nrow(ann)), side = 3, line = 1, cex = 1.5)
 dev.off()
 
 # How many site-years are autotrophic?
 aut_sites <- ann %>% 
   mutate(siteyear = paste(site_name, year, sep = '_')) %>%
-  filter(NEP > 0 ) # 90
+  filter(NEP > 0 ) # 90, so ~10% of 923 site-years total
 
+# How many UNIQUE sites?
+length(unique(aut_sites$site_name))
+# 38 sites are autotrophic at the annual scale
+
+# GPP Summary:
+# minimum GPP
+min(aut_sites$GPP) # 316
+
+# maximum GPP
+max(aut_sites$GPP) # 12,505
+
+# mean GPP
+mean(aut_sites$GPP) # 2368
+
+# sd GPP
+sd(aut_sites$GPP) # 2192
+
+# NEP Summary:
+# minimum NEP
+min(aut_sites$NEP) # 0.09
+
+# maximum NEP
+max(aut_sites$NEP) # 4,046
+
+# mean NEP
+mean(aut_sites$NEP) # 367
+
+# sd NEP
+sd(aut_sites$NEP) # 538
+
+##### Heterotrophic sites #####
+
+# How many site-years are heterotrophic?
+het_sites <- ann %>% 
+  mutate(siteyear = paste(site_name, year, sep = '_')) %>%
+  filter(NEP <= 0 )
+
+# min GPP at heterotrophic sites
+min(het_sites$GPP) # 33
+
+# max GPP at heterotrophic sites
+max(het_sites$GPP) # 12,154
+
+# mean GPP at heterotrophic sites
+mean(het_sites$GPP) # 833
+
+# sd GPP at heterotrophic sites
+sd(het_sites$GPP) # 981
+
+#### Other Figures ####
+
+# Create new dataframe only for autotrophic sites and create new column
+# with cumulative GPP on a daily basis.
 aut <- dat %>% 
   mutate(siteyear = paste(site_name, year, sep = '_')) %>%
   filter(siteyear %in% aut_sites$siteyear) %>%
@@ -64,6 +124,8 @@ aut <- dat %>%
   arrange(DOY) %>%
   mutate(GPP_cum = cumsum(GPP_filled))
 
+# Plot cumulative GPP curves for autotrophic sites.
+# Pecos River is far and away the greatest.
 dev.off() 
 plot(aut$DOY, aut$GPP_cum, type = 'n',  xlab = 'Day of Year',
      ylab = '', ylim = c(0, 15000))
@@ -75,10 +137,7 @@ for(i in 1:nrow(aut_sites)){
   
 }
 
-# How many UNIQUE sites?
-length(unique(aut_sites$site_name))
-
-#Distribution of cumulative(?) water temperature, discharge, PAR, GPP, ER
+# Distribution of cumulative(?) water temperature, discharge, PAR, GPP, ER
 png('figures/distribution_annual_GPP_ER_Q_PAR_T.png', width = 800, height = 400)
 aut_sites %>%
   mutate(log10GPP=log10(GPP),
@@ -95,13 +154,12 @@ aut_sites %>%
   facet_wrap(~name, scales="free")
 dev.off()
 
-
-#How variable is water temp, discharge, PAR, GPP, ER at these sites?
+# How variable is water temp, discharge, PAR, GPP, ER at these sites?
 cv <- function(x) {
   sd(x)/mean(x)*100
 }
 
-#Calculate cv for each site-year
+# Calculate cv for each site-year
 cv_aut <- aut %>%
   group_by(site_name, year) %>%
   summarize(across(any_of(ends_with('filled')), cv)) %>%
@@ -120,3 +178,4 @@ cv_aut %>%
   theme(legend.position="none")
 dev.off()
 
+# End of script.
