@@ -12,6 +12,7 @@ library(tidyverse)
 # Load data.
 dat <- read_csv('data_working/across_sites_model_data.csv')
 site_info <- readRDS("data_ignored/lotic_site_info_filtered.rds")
+sites <- read_tsv("data_356rivers/site_data.tsv")
 
 #### Summaries ####
 
@@ -67,13 +68,12 @@ length(unique(aut_sites$site_name))
 # 37 sites are autotrophic at the annual scale
 
 # Print site names
-site_names <- site_info %>%
-  select(Site_ID, Name)
+site_names <- sites %>%
+  select(site_name, long_name)
 
-aut_sites <- left_join(aut_sites, site_names, 
-                       by = join_by("site_name" == "Site_ID"))
+aut_sites <- left_join(aut_sites, site_names)
 
-unique(aut_sites$Name)
+unique(aut_sites$long_name)
 
 # GPP Summary:
 # minimum GPP
