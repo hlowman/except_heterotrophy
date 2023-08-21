@@ -1,9 +1,13 @@
+# Patterns in Annual Autotrophy
+# Alice Carter et al.
+
 # Describe the patterns in metabolism across all siteyears with at least 60% coverage
 # Dataset used is the gap-filled data from the Bernhardt data release
 
+# Load packages.
 library(tidyverse)
 
-
+# Load data.
 dat <- readRDS('data_356rivers/high_quality_daily_metabolism_with_SP_covariates.rds')
 
 # Descriptive Statistics and data distributions
