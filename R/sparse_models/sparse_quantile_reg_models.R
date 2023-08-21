@@ -41,10 +41,10 @@ dd <- dd[,-geol_vars] %>%
     mutate(across(c(-site_name, -year), ~scale(.)[,1]))
 
 corr <- cor(dd[,c(3,4,7:ncol(dd))])
-png('figures/annual_corrplot.png', width = 10, height = 10, units = 'in', res = 100)
-  corrplot::corrplot(corr, method = 'color', type = 'lower',  diag = FALSE,
-                     order = 'hclust', tl.col = 'black', tl.cex = 0.6)
-dev.off()
+# png('figures/annual_corrplot.png', width = 10, height = 10, units = 'in', res = 100)
+#   corrplot::corrplot(corr, method = 'color', type = 'lower',  diag = FALSE,
+#                      order = 'hclust', tl.col = 'black', tl.cex = 0.6)
+# dev.off()
 # hist2 <- function(x,y){
 #   hist(x, main = y)
 # }
@@ -177,33 +177,46 @@ vars <- data.frame(var = c('MOD_ann_NPP', 'TmeanWs', 'PAR_kurt',
 
 coefs <- full_join(vars, coefs, by = 'var') %>%
   mutate(order = c(6,1,2,3,4,5,7,8)) %>%
-  arrange(order)
-min <- min(c(coefs$value.x - coefs$se.x, coefs$value.y - coefs$se.y),
+  arrange(order) %>%
+  rename(value_pr = value.x,
+         value_nep = value.y,
+         se_pr = se.x, 
+         se_nep = se.y,
+         t_val_pr = t_val.x,
+         t_val_nep = t_val.y,
+         p_val_pr = p_val.x,
+         p_val_nep = p_val.y
+         ) 
+
+write_csv(coefs, 'data_working/sparse_model_coefficient_estimates.csv')
+min <- min(c(coefs$value_pr - coefs$se_pr, coefs$value_nep - coefs$se_nep),
                  na.rm = T) * 1.15
-max <- max(c(coefs$value.x + coefs$se.x, coefs$value.y + coefs$se.y), 
+max <- max(c(coefs$value_pr + coefs$se_pr, coefs$value_nep + coefs$se_nep), 
            na.rm = T) * 1.15
+
+
 
 png('figures/sparse_quantile_regression_comparison.png', width = 8, height = 4, 
     units = 'in', res = 300)
   par(mfrow = c(1,2),
       mar = c(4,0.9,1,0),
       oma = c(0,10,2,1))
-  plot(coefs$value.y, rev(seq(1:nrow(coefs))), pch = 19, xlim = c(min,max),
+  plot(coefs$value_nep, rev(seq(1:nrow(coefs))), pch = 19, xlim = c(min,max),
        xlab = expression(paste( 'Coefficient estimate (', beta, ')')), 
        bty = 'n', yaxt = 'n', ylab = '', col = coefs$col)
-  segments(x0 = coefs$value.y - coefs$se.y, y0 = rev(seq(nrow(coefs):1)),
-           x1 = coefs$value.y + coefs$se.y, y1 = rev(seq(nrow(coefs):1)), 
+  segments(x0 = coefs$value_nep - coefs$se_nep, y0 = rev(seq(nrow(coefs):1)),
+           x1 = coefs$value_nep + coefs$se_nep, y1 = rev(seq(nrow(coefs):1)), 
            col = coefs$col)
   abline(v = 0)
   mtext('NEP Model', line = 1.5)
   mtext(paste0('R1 = ', round(R1_NEP, 2)), line = 0.5, cex = 0.8)
   axis(2, at = seq(nrow(coefs):1), 
        labels = rev(coefs$lab), las = 2)
-  plot(coefs$value.x, rev(seq(1:nrow(coefs))), pch = 19, xlim = c(min,max),
+  plot(coefs$value_pr, rev(seq(1:nrow(coefs))), pch = 19, xlim = c(min,max),
        xlab = expression(paste( 'Coefficient estimate (', beta, ')')), 
        bty = 'n', yaxt = 'n', ylab = '', col = coefs$col)
-  segments(x0 = coefs$value.x - coefs$se.x, y0 = rev(seq(nrow(coefs):1)),
-           x1 = coefs$value.x + coefs$se.x, y1 = rev(seq(nrow(coefs):1)), 
+  segments(x0 = coefs$value_pr - coefs$se_pr, y0 = rev(seq(nrow(coefs):1)),
+           x1 = coefs$value_pr + coefs$se_pr, y1 = rev(seq(nrow(coefs):1)), 
            col = coefs$col)
   abline(v = 0)
   mtext('P:R Model', line = 1.5)
@@ -215,20 +228,20 @@ png('figures/sparse_quantile_regression_comparison.png', width = 8, height = 4,
     units = 'in', res = 300)
   par(mfrow = c(1,1),mar = c(4,0,1,0),
       oma = c(0,11,2,1))
-  plot(coefs$value.y, rev(seq(1:nrow(coefs))) + s, pch = 19, xlim = c(min,max),
+  plot(coefs$value_nep, rev(seq(1:nrow(coefs))) + s, pch = 19, xlim = c(min,max),
        xlab = expression(paste( 'Coefficient estimate (', beta, ')')), 
        bty = 'n', yaxt = 'n', ylab = '', col = coefs$col)
-  segments(x0 = coefs$value.y - coefs$se.y, y0 = rev(seq(nrow(coefs):1))+s,
-           x1 = coefs$value.y + coefs$se.y, y1 = rev(seq(nrow(coefs):1))+s, 
+  segments(x0 = coefs$value_nep - coefs$se_nep, y0 = rev(seq(nrow(coefs):1))+s,
+           x1 = coefs$value_nep + coefs$se_nep, y1 = rev(seq(nrow(coefs):1))+s, 
            col = coefs$col)
   abline(v = 0)
   axis(2, at = seq(nrow(coefs):1), 
        labels = rev(coefs$lab), las = 2)
-  points(coefs$value.x, rev(seq(1:nrow(coefs)))-s, pch = 1, xlim = c(min,max),
+  points(coefs$value_pr, rev(seq(1:nrow(coefs)))-s, pch = 1, xlim = c(min,max),
        xlab = expression(paste( 'Coefficient estimate (', beta, ')')), 
        bty = 'n', yaxt = 'n', ylab = '', col = coefs$col)
-  segments(x0 = coefs$value.x - coefs$se.x, y0 = rev(seq(nrow(coefs):1))-s,
-           x1 = coefs$value.x + coefs$se.x, y1 = rev(seq(nrow(coefs):1))-s, 
+  segments(x0 = coefs$value_pr - coefs$se_pr, y0 = rev(seq(nrow(coefs):1))-s,
+           x1 = coefs$value_pr + coefs$se_pr, y1 = rev(seq(nrow(coefs):1))-s, 
            col = coefs$col)
   abline(v = 0)
   mtext('PR Coefficients', line = 1)
@@ -237,10 +250,10 @@ dev.off()
 
 # make a table for the SI with all of the covariates included in the model and their estimates.
 coef_tab <- coefs %>% 
-  rename(NEP_est = value.y, NEP_se = se.y,
-         NEP_pval = p_val.y, NEP_tval = t_val.y,
-         PR_est = value.x, PR_se = se.x,
-         PR_pval = p_val.x, PR_tval = t_val.x,
+  rename(NEP_est = value_nep, NEP_se = se_nep,
+         NEP_pval = p_val_nep, NEP_tval = t_val_nep,
+         PR_est = value_pr, PR_se = se_pr,
+         PR_pval = p_val_pr, PR_tval = t_val_pr,
          variable = var) %>%
   select(-col, -order)
 qrtab_NEP <- data.frame(qq_NEP$coef) %>%
