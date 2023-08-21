@@ -10,7 +10,8 @@
 library(tidyverse)
 
 # Load data.
-dat <- readRDS('data_356rivers/high_quality_daily_metabolism_with_SP_covariates.rds')
+dat <- read_csv('data_working/across_sites_model_data.csv')
+site_info <- readRDS("data_ignored/lotic_site_info_filtered.rds")
 
 #### Summaries ####
 
@@ -19,21 +20,18 @@ dat <- readRDS('data_356rivers/high_quality_daily_metabolism_with_SP_covariates.
 # Descriptive Statistics and data distributions
 # The dataset here uses gap-filled GPP and ER values, to match what is used in
 # quantile regression modeling efforts for annual productivity estimates.
-ann <- dat %>%
-  group_by(site_name, year) %>%
-  summarize(across(any_of(ends_with('filled')), sum, na.rm = T)) %>%
-  rename_with(.cols = ends_with('_filled'), .fn = ~sub('_filled', '', .) )
-# 923 site-years
+ann <- dat
+# 921 site-years
 unique(ann$site_name)
-# 238 sites total
+# 236 sites total
 
 # Figure of all sites with autotrophic ones colored.
 png('figures/distribution_annual_NEP.png', width = 600, height = 400)
 par(mfrow = c(1, 2), mar = c(5,2,3,1))
-plot(density(ann$NEP), xlim = c(-6200, 2000), main = '', yaxt = 'n',
+plot(density(ann$ann_NEP_C), xlim = c(-6200, 2000), main = '', yaxt = 'n',
      xlab = expression(paste('Annual NEP (g',O[2],'/',m^2,'/d)' )), ylab = '')
 mtext('Density', 2, 0.7)
-dd = density(ann$NEP, na.rm = T)
+dd = density(ann$ann_NEP_C, na.rm = T)
 ddo = order(dd$x)
 xdens = dd$x[ddo]
 ydens = dd$y[ddo]
@@ -43,7 +41,7 @@ polygon(c(xdens_ut, rev(xdens_ut)), c(ydens_ut, rep(0, length(ydens_ut))),
         col='lightgreen', border='lightgreen')
 lines(dd)
 
-dd = density(log(-ann$GPP/ann$ER))
+dd = density(log(-ann$ann_GPP_C/ann$ann_ER_C))
 plot(dd, main = '', xlab = 'Log(GPP/ER)' , ylab = '', yaxt = 'n')
 ddo = order(dd$x)
 xdens = dd$x[ddo]
@@ -55,63 +53,72 @@ polygon(c(xdens_ut, rev(xdens_ut)), c(ydens_ut, rep(0, length(ydens_ut))),
 lines(dd)
 par(mfrow = c(1,1), new = T)
 mtext(paste0('Autotrophic site years = ',
-             100 * round(length(which(ann$NEP>0))/nrow(ann),3), 
+             100 * round(length(which(ann$ann_NEP_C>0))/nrow(ann),3), 
              '% of ', nrow(ann)), side = 3, line = 1, cex = 1.5)
 dev.off()
 
 # How many site-years are autotrophic?
 aut_sites <- ann %>% 
   mutate(siteyear = paste(site_name, year, sep = '_')) %>%
-  filter(NEP > 0 ) # 90, so ~10% of 923 site-years total
+  filter(ann_NEP_C > 0 ) # 87, so ~9% of 921 site-years total
 
 # How many UNIQUE sites?
 length(unique(aut_sites$site_name))
-# 38 sites are autotrophic at the annual scale
+# 37 sites are autotrophic at the annual scale
+
+# Print site names
+site_names <- site_info %>%
+  select(Site_ID, Name)
+
+aut_sites <- left_join(aut_sites, site_names, 
+                       by = join_by("site_name" == "Site_ID"))
+
+unique(aut_sites$Name)
 
 # GPP Summary:
 # minimum GPP
-min(aut_sites$GPP) # 316
+min(aut_sites$ann_GPP_C) # 62
 
 # maximum GPP
-max(aut_sites$GPP) # 12,505
+max(aut_sites$ann_GPP_C) # 3,755
 
 # mean GPP
-mean(aut_sites$GPP) # 2368
+mean(aut_sites$ann_GPP_C) # 723
 
 # sd GPP
-sd(aut_sites$GPP) # 2192
+sd(aut_sites$ann_GPP_C) # 667
 
 # NEP Summary:
 # minimum NEP
-min(aut_sites$NEP) # 0.09
+min(aut_sites$ann_NEP_C) # 0.13
 
 # maximum NEP
-max(aut_sites$NEP) # 4,046
+max(aut_sites$ann_NEP_C) # 1,199
 
 # mean NEP
-mean(aut_sites$NEP) # 367
+mean(aut_sites$ann_NEP_C) # 108
 
 # sd NEP
-sd(aut_sites$NEP) # 538
+sd(aut_sites$ann_NEP_C) # 163
 
 ##### Heterotrophic sites #####
 
 # How many site-years are heterotrophic?
 het_sites <- ann %>% 
   mutate(siteyear = paste(site_name, year, sep = '_')) %>%
-  filter(NEP <= 0 )
+  filter(ann_NEP_C <= 0 )
 
 # min GPP at heterotrophic sites
-min(het_sites$GPP) # 33
+min(het_sites$ann_GPP_C) # 10
 
 # max GPP at heterotrophic sites
-max(het_sites$GPP) # 12,154
+max(het_sites$ann_GPP_C) # 3,650
 
 # mean GPP at heterotrophic sites
-mean(het_sites$GPP) # 833
+mean(het_sites$ann_GPP_C) # 250
 
 # sd GPP at heterotrophic sites
-sd(het_sites$GPP) # 981
+sd(het_sites$ann_GPP_C) # 294
 
 #### Other Figures ####
 
