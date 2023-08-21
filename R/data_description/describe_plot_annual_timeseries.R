@@ -13,11 +13,13 @@ library(tidyverse)
 dat <- readRDS('data_356rivers/high_quality_daily_metabolism_with_SP_covariates.rds')
 
 # Descriptive Statistics and data distributions
-
 ann <- dat %>%
   group_by(site_name, year) %>%
   summarize(across(any_of(ends_with('filled')), sum, na.rm = T)) %>%
   rename_with(.cols = ends_with('_filled'), .fn = ~sub('_filled', '', .) )
+# 923 site-years
+unique(ann$site_name)
+# 238 sites total
 
 png('figures/distribution_annual_NEP.png', width = 600, height = 400)
 par(mfrow = c(1, 2), mar = c(5,2,3,1))
@@ -50,9 +52,11 @@ mtext(paste0('Autotrophic site years = ',
              '% of ', nrow(ann)), side = 3, line = 1, cex = 1.5)
 dev.off()
 
+# How many site-years are autotrophic?
 aut_sites <- ann %>% 
   mutate(siteyear = paste(site_name, year, sep = '_')) %>%
-  filter(NEP > 0 )
+  filter(NEP > 0 ) # 90
+
 aut <- dat %>% 
   mutate(siteyear = paste(site_name, year, sep = '_')) %>%
   filter(siteyear %in% aut_sites$siteyear) %>%
