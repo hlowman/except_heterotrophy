@@ -10,12 +10,11 @@
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
          "tidyverse"), require, character.only=T)
 
-
 ## Import lotic_standardized_full from Bernhardt metabolism 2022 data release
+## Download from: https://figshare.com/articles/software/Code_and_RDS_data_for_Bernhardt_et_al_2022_PNAS_/19074140?backTo=/collections/Data_and_code_for_Bernhardt_et_al_2022_PNAS_/5812160
+lotic_standardized_full <- readRDS("lotic_standardized_full.rds")
 
-
-
-## Subset data frame
+## Subset data frame for test
 df <- lotic_standardized_full[1:3]
 
 ## Extract events and duration of events
@@ -84,9 +83,7 @@ duration_calc <- function(df){
   
 }
 
-l <- df
-
-auto_events <- lapply(l, function(x) duration_calc(x))
+auto_events <- lapply(df, function(x) duration_calc(x))
 auto_df <- ldply(auto_events, data.frame)
 head(auto_df);tail(auto_df)
 
