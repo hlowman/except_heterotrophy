@@ -1,5 +1,6 @@
 # This code is adapted from the constrained quantile regression model 
-#   It refits the quantile regressions using a built in lasso method and including the whole dataset.
+#   It refits the quantile regressions using a built in lasso method and 
+#   including the whole dataset.
 
 # A Carter
 library(tidyverse)
@@ -163,8 +164,8 @@ coefs_PR <- data.frame(qq_PR$coef) %>%
 coefs_NEP$var = row.names(coefs_NEP)
 coefs_PR$var = row.names(coefs_PR)
 
-coefs <- full_join(coefs_PR, coefs_NEP, by = 'var') %>%
-  select(-starts_with(c('t_val', 'p_val')))
+coefs <- full_join(coefs_PR, coefs_NEP, by = 'var') #%>%
+  # select(-starts_with(c('t_val', 'p_val')))
 vars <- data.frame(var = c('MOD_ann_NPP', 'TmeanWs', 'PAR_kurt',
                            'Stream_PAR_sum', 'ElevWs', 'Disch_amp',
                            'max_interstorm', 'Width'),
@@ -174,7 +175,9 @@ vars <- data.frame(var = c('MOD_ann_NPP', 'TmeanWs', 'PAR_kurt',
                    col = c('red', 'grey', 'grey', 'black', 'grey', 'red', 
                            'black', 'black'))
 
-coefs <- full_join(vars, coefs, by = 'var')
+coefs <- full_join(vars, coefs, by = 'var') %>%
+  mutate(order = c(6,1,2,3,4,5,7,8)) %>%
+  arrange(order)
 min <- min(c(coefs$value.x - coefs$se.x, coefs$value.y - coefs$se.y),
                  na.rm = T) * 1.15
 max <- max(c(coefs$value.x + coefs$se.x, coefs$value.y + coefs$se.y), 
@@ -233,8 +236,15 @@ dev.off()
 
 
 # make a table for the SI with all of the covariates included in the model and their estimates.
-qrtab <- data.frame(qq$coef) %>%
-  mutate(variable = row.names(qq$coef)) %>% tibble() 
+coef_tab <- coefs %>% 
+  rename(NEP_est = value.y, NEP_se = se.y,
+         NEP_pval = p_val.y, NEP_tval = t_val.y,
+         PR_est = value.x, PR_se = se.x,
+         PR_pval = p_val.x, PR_tval = t_val.x,
+         variable = var) %>%
+  select(-col, -order)
+qrtab_NEP <- data.frame(qq_NEP$coef) %>%
+  mutate(variable = row.names(qq_NEP$coef)) %>% tibble() 
 
 tmp <- dat %>%
   filter(!is.na(site_name))%>%
@@ -249,7 +259,7 @@ tmp <- dat %>%
   select(-ann_GPP_C, -ann_ER_C, -NHD_TIDAL, -site_name, -year,
          -lat, -lon, -NEP, -PR)  %>%
   # summarize(across(everything(), min)) %>%
-  summarize(across(everything(), .fns = list(min, max))) %>%
+  summarize(across(everything(), .fns = list(~min(.), ~max(.)))) %>%
   pivot_longer(cols = everything(), values_to = 'val', 
                names_to = c('variable', 'stat'), 
                names_pattern = '^(.+)?_([12])$') %>%
