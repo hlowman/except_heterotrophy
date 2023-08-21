@@ -120,6 +120,7 @@ plot_comb_dens <- function(dat, var, log = FALSE){
   }
   x_range <- range(d_aut$x, d_het$x, d_lit$x)
   y_range <- range(d_aut$y, d_het$y, d_lit$y)
+  y_range[2] <- y_range[2]*1.1
   plot(1, xlim = x_range, ylim = y_range, type = 'n',
        ylab = 'Density', xlab = var, xaxt = 'n')
   if(log){
@@ -131,13 +132,14 @@ plot_comb_dens <- function(dat, var, log = FALSE){
   add_dens_plot(d_lit, med_lit, fill_pal[3], col_pal[3], lit = TRUE)
   add_dens_plot(d_aut, med_aut, fill_pal[1], col_pal[1])
   add_dens_plot(d_het, med_het, fill_pal[2], col_pal[2])
+  mtext(var, line = -1.3, adj = 0.05)
 }
 
 col_pal <- c('forestgreen',
              'sienna4',
              'darkgreen')
-par(mfrow = c(4,4),
-    mar = c(2,2,0,0),
+par(mfrow = c(4,3),
+    mar = c(2.5,2,0,0),
     oma = c(3,3,2,2))
 
 plot_comb_dens(dat, 'Stream_PAR_sum')
@@ -148,7 +150,7 @@ plot_comb_dens(dat, 'max_interstorm', log = TRUE)
 plot_comb_dens(dat, 'width_to_area', log = TRUE)
 plot_comb_dens(dat, 'PrecipWs')
 plot_comb_dens(dat, 'MOD_ann_NPP')
-plot_comb_dens(dat, 'drainage_density_connected')
+# plot_comb_dens(dat, 'drainage_density_connected')
 plot_comb_dens(dat, 'PAR_kurt')
 plot_comb_dens(dat, 'TmeanWs')
 plot_comb_dens(dat, 'ElevWs', log = TRUE)

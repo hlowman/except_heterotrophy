@@ -228,6 +228,8 @@ litauto3<-litauto2[,10:20]
 
 pca_litauto = rda(litauto3,  scale=T)  ## 48 % var 2 axes ##
 
+summary(pca_litauto) %>% selec
+
 plotlitautopca<-plot(pca_litauto)
 
 litautositeslong <- sites.long(plotlitautopca, env.data=litauto2[,1:9]) #extract data for plotting
@@ -241,17 +243,13 @@ litsiteslong2<-litautositeslong %>% filter(nwis_gage>0) %>% select(River, Type1,
 autositeslong2<-litautositeslong %>% filter(year>0) %>% select(site_name, year, ann_GPP_C, PR, Class, axis1, axis2, labels)
 
 
-rda_litauto <- ggplot() + 
+rda_litauto <-  ggplot() + 
   geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
   geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
   scale_x_continuous(sec.axis = dup_axis(labels=NULL, name=NULL)) +
   scale_y_continuous(sec.axis = dup_axis(labels=NULL, name=NULL)) +    
   
-  geom_point(data=litsiteslong2, aes(x=axis1, y=axis2), color="blue", 
-             size=2, show.legend = T) +
-  geom_text(data = litsiteslong2, 
-            mapping = aes(x=axis1, y=axis2, label = River), 
-            inherit.aes = FALSE, color="blue") +
+  
   geom_point(data=autositeslong2 %>%  mutate(Class = case_when(PR<1~"Heterotrophic",
                                                               PR>1~"Autotrophic")), 
              aes(x=axis1, y=axis2, colour=PR, shape = Class, alpha = Class), 
@@ -268,17 +266,64 @@ rda_litauto <- ggplot() +
                # weight = case_when(labels %in% c("ElevWs","Width")~2,T~1))
                ,
                aes(xend=axis1, y = 0,x=0, yend=axis2),
-               colour="red",  arrow=arrow(), show.legend = F) +
+               colour="red3",  arrow=arrow(), show.legend = F) +
   
-  geom_text_repel(data=litautospecieslong #%>% mutate(axis1 = case_when(labels == "Width"~-1,T~axis1),
-                  #          axis2 = case_when(labels == "ElevWs"~1,T~axis2))
-                  ,
-                  aes(x=axis1, y=axis2, label=labels),
-                  colour="black", check.overlap = T, show.legend = F)+
+  geom_text(data=litautospecieslong %>% mutate(labels = case_when(labels =="Disch_cv"~ "                                      Discharge (cv)",
+                                                                  labels =="max_interstorm"~ "                    Interstorm (max)",
+                                                                  labels =="RBI"~ "Flashiness (RBI)",
+                                                                  labels =="width_to_area"~ "Width/Area",
+                                                                  labels =="PrecipWs"~ "Precipitation",
+                                                                  labels =="MOD_ann_NPP"~ "Annual NPP",
+                                                                  labels =="drainage_density_connected"~ "Drainage Density                                         ",
+                                                                  labels =="PAR_kurt"~ "PAR Kurtosis",
+                                                                  labels =="ElevWs"~ "                Watershed Elev.",
+                                                                  labels =="Width"~ "Width",
+                                                                  labels =="Stream_PAR_sum"~ "        PAR (stream)",
+                                                                  T~NA
+                                                                  )),
+                  aes(x=axis1/1.5, y=axis2/1.5, label=labels, 
+                      angle =case_when(labels =="Width/Area"~ -65,T~(axis2/axis1)*atan(
+                          # slope
+                          1 *
+                            # aspect ratio of plot:
+                            unit(0, 'npc') %>% grid::convertY('native', valueOnly = T) /
+                            unit(1, 'npc') %>% grid::convertX('native', valueOnly = T) /
+                            # ratio of y-range to x-range of plot:
+                            ( 2 / 2 )
+                        ) * 180 / pi)), position = position_nudge(y = c(-.085,#Disch_cv
+                                                                       -.085,
+                                                                       -.085,
+                                                                       -.085,#width_to_area
+                                                                       .085,
+                                                                       -.085,
+                                                                       .085,#drain_dens
+                                                                       .085,
+                                                                       -.085,
+                                                                       -.085,
+                                                                       .085),
+                                                                  x = c(0, #Disch_cv
+                                                                        0,
+                                                                        0,
+                                                                        0,#width_to_area
+                                                                        0,
+                                                                        0,
+                                                                        0,#drain_dens
+                                                                        0,
+                                                                        0,
+                                                                        0,
+                                                                        0)),
+                  colour="red3", check.overlap = T, show.legend = F)+
   scale_colour_stepsn(colors = terrain.colors(10, rev=T))+
-  theme_bw()+theme(panel.grid = element_blank())+ggtitle("PCA that includes literature sites")
+    geom_point(data=litsiteslong2, aes(x=axis1, y=axis2), color="blue", 
+               size=2, show.legend = F, shape = 19) +
+    geom_text(data = litsiteslong2, 
+              mapping = aes(x=axis1, y=axis2, label = River), 
+              inherit.aes = FALSE, color="blue", position = position_nudge(y = .085, set.seed(5))) +
+  theme_bw()+theme(panel.grid = element_blank())+
+    labs(x = "pca1 (32.34%)", y = "pca2 (16.88%)")+coord_cartesian()
 
-
+save_plot("Heterotrophy_Figure6_PCA.png", rda_litauto, dpi = 600, base_width = 8, base_height = 6)
 
 ggplot(litauto, aes(x = Disch_cv, fill = Class)) + 
   geom_histogram()
+
