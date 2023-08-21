@@ -15,10 +15,10 @@ lapply(c("wesanderson","ggmap"), require, character.only=T)
 ## Import lotic_standardized_full from Bernhardt metabolism 2022 data release
 ## Download from: https://figshare.com/articles/software/Code_and_RDS_data_for_Bernhardt_et_al_2022_PNAS_/19074140?backTo=/collections/Data_and_code_for_Bernhardt_et_al_2022_PNAS_/5812160
 ## Setwd to output_data
-lotic_standardized_full <- readRDS("lotic_standardized_full.rds")
+lotic_standardized_full <- readRDS("../../data_ignored/lotic_standardized_full.rds")
 
 ## Subset data frame for test
-#df <- lotic_standardized_full[1:3]
+#df <- lotic_standardized_full[1:10]
 ## If not needed:
 df <- lotic_standardized_full
 
@@ -28,7 +28,9 @@ duration_calc <- function(df){
   d <- df[,c("Site_ID","Date","GPP","ER")]
   d$NEP <- d$GPP - abs(d$ER)
   
+  # Get rid of dates with NAs for GPP/ER/NEP
   d <- na.omit(d)
+  d[1:2,] <- NA
   
   # First calc time difference and split to segments to avoid NA days
   d$diff_time <- NA
@@ -60,7 +62,7 @@ duration_calc <- function(df){
       filter(NEP_above) %>%
       # for each period/event, get its duration
       group_by(id) %>%
-      summarise(event_duration = difftime(last(Date), first(Date), units = "days"),
+      reframe(event_duration = difftime(last(Date), first(Date), units = "days"),
                 start_date = first(Date),
                 end_date = last(Date))
     
@@ -88,8 +90,13 @@ duration_calc <- function(df){
   
 }
 
-auto_events <- lapply(df, function(x) duration_calc(x))
-auto_df <- ldply(auto_events, data.frame)
+auto_events <- lapply(df[8], function(x) duration_calc(x))
+#something happening with #8
+
+auto_events_1_100 <- lapply(df[1:100], function(x) duration_calc(x))
+auto_events_101_200<- lapply(df[101:200], function(x) duration_calc(x))
+auto_events_201_200<- lapply(df[101:200], function(x) duration_calc(x))
+auto_df <- ldply(auto_events_1_100, data.frame)
 head(auto_df);tail(auto_df)
 
 ## Add 1 to event duration because 1 day currently = 0 time difference
