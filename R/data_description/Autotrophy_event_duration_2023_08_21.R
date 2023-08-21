@@ -8,10 +8,11 @@
 
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
-         "tidyverse"), require, character.only=T)
+         "tidyverse", "data.table"), require, character.only=T)
 
 ## Import lotic_standardized_full from Bernhardt metabolism 2022 data release
 ## Download from: https://figshare.com/articles/software/Code_and_RDS_data_for_Bernhardt_et_al_2022_PNAS_/19074140?backTo=/collections/Data_and_code_for_Bernhardt_et_al_2022_PNAS_/5812160
+## Setwd to output_data
 lotic_standardized_full <- readRDS("lotic_standardized_full.rds")
 
 ## Subset data frame for test
@@ -87,9 +88,6 @@ auto_events <- lapply(df, function(x) duration_calc(x))
 auto_df <- ldply(auto_events, data.frame)
 head(auto_df);tail(auto_df)
 
-## clean event duration
-#auto_df <- auto_df[-which(auto_df$event_duration < 0),]
-
 ## Add 1 to event duration
 auto_df$event_duration <- auto_df$event_duration+1
 auto_df$event_dur <- as.numeric(auto_df$event_duration)
@@ -128,7 +126,7 @@ auto_df$NEP_thresh_name <- factor(auto_df$NEP_thresh,
                                              "1" = "NEP > 1",
                                              "5" = "NEP > 5"))
 
-(fig1 <- ggplot(auto_df, aes(quant_val, fill=as.factor(NEP_thresh)))+
+fig1 <- ggplot(auto_df, aes(quant_val, fill=as.factor(NEP_thresh)))+
   geom_bar(alpha=0.4, color="black", position="identity")+
   theme_bw()+
   theme(panel.grid.major.y = element_line(color="gray85"),
@@ -136,7 +134,8 @@ auto_df$NEP_thresh_name <- factor(auto_df$NEP_thresh,
         axis.text.x = element_text(size=14, angle=35, hjust = 1),
         axis.text.y = element_text(size=14),
         legend.position = "top")+
-  labs(x="Event duration", y="Number of events"))
+  labs(x="Event duration", y="Number of events")
+fig1
 
 # ggsave(("figures/auto_events_duration.png"),
 #        width = 25,
@@ -150,10 +149,11 @@ auto_df$NEP_thresh_name <- factor(auto_df$NEP_thresh,
 
 auto_df$month <- month(auto_df$start_date)
 
-(fig2 <- ggplot(auto_df, aes(as.factor(month)))+
+fig2 <- ggplot(auto_df, aes(as.factor(month)))+
   geom_bar(alpha=0.4, color="black", position="identity")+
   facet_wrap(~as.factor(quant_val), ncol=1, scales = "free_y")+
-  theme_bw())
+  theme_bw()
+fig2
 
 # ggsave(("figures/auto_events_onset.png"),
 #        width = 25,
