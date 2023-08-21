@@ -8,6 +8,7 @@
 
 # Load packages.
 library(tidyverse)
+library(ggthemes)
 
 # Load data.
 dat <- read_csv('data_working/across_sites_model_data.csv')
