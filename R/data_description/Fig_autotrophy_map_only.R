@@ -9,10 +9,8 @@ lapply(c("lubridate","cowplot",
          "ggsn","wesanderson", "sf"), require, character.only=T)
 
 ## Import Data
-NEP_info <- read_csv("data_working/riversiteannual.csv")
-NEP_info_2 <- NEP_info %>% mutate(logPtoP=log(PtoR))
-
-GPP_info <- read_csv("data_working/annual_summary_data.csv")
+GPP_info <- read_csv("data_working/across_sites_model_data.csv") %>%
+  mutate(logPtoP = log(PR))
 
 sites <- read_tsv("data_356rivers/site_data.tsv")
 
@@ -27,15 +25,16 @@ check_sites <- left_join(my_sites, sites) # None.
 Annual_info <- GPP_info %>%
   group_by(site_name, lat, lon) %>%
   summarize(mean_GPP_annual = mean(ann_GPP_C),
-            mean_ER_annual = mean(ann_ER_C)) %>%
+            mean_ER_annual = mean(ann_ER_C),
+            mean_NEP_annual = mean(ann_NEP_C)) %>%
   ungroup() %>%
   mutate(mean_PR_annual = mean_GPP_annual/(-mean_ER_annual))
 
 ## Generate map of NEP
 (NEP_map_fig <- ggmap(get_stamenmap(bbox=c(-125, 25, -66, 50), zoom = 5, 
                              maptype='toner'))+
-    geom_point(data = NEP_info_2, aes(x = lon, y = lat, 
-                                  fill=NEP, size=NEP), shape=21)+
+    geom_point(data = Annual_info, aes(x = lon, y = lat, 
+                                  fill=mean_NEP_annual, size=mean_NEP_annual), shape=21)+
     theme(legend.position = "right")+
     labs(x="Longitude", y="Latitude")+
     scale_fill_gradient("Mean annual NEP (units C)",
@@ -45,19 +44,13 @@ Annual_info <- GPP_info %>%
 ## Generate map of P:R
 (PR_map_fig <- ggmap(get_stamenmap(bbox=c(-125, 25, -66, 50), zoom = 5, 
                     maptype='toner'))+
-  geom_point(data = NEP_info_2, aes(x = lon, y = lat, 
-                                fill=PtoR, size=PtoR), shape=21)+
+  geom_point(data = Annual_info, aes(x = lon, y = lat, 
+                                fill=mean_PR_annual, size=mean_PR_annual), shape=21)+
   theme(legend.position = "right")+
   labs(x="Longitude", y="Latitude")+
   scale_fill_gradient("P:R",
-                      low = "green", high = "brown")+
+                      low = "brown", high = "green")+
   scale_size_continuous("P:R"))
-
-## Generate histogram of NEP
-NEP_quantile <- quantile(NEP_info_2[,5], probs = seq(0, 1, 0.25), 
-                         na.rm = FALSE, names = TRUE)
-
-NEP_hist <- hist(NEP_info_2[,8],main="logNEP",xlab="",xlim=c(-4,1),col="brown", ylim = c(0,100))
 
 ## Generate map sized by mean annual GPP and colored by P:R.
 # make data sf object
@@ -93,7 +86,7 @@ my_breaks <- c(0.05, 0.15, 0.4, 1)
   theme_classic()) # remove grid
 
 # export exploratory figures
-# ggsave(("figures/Annual_GPP_PR_USmap.png"),
+# ggsave(("figures/Annual_GPP_PR_USmap_082123.png"),
 #        width = 22,
 #        height = 11,
 #        units = "cm"
