@@ -23,14 +23,14 @@ mod_tableNEP$modeltype<-factor(mod_tableNEP$modeltype,levels=c("Light", "Light +
 mod_tableNEP<-mod_tableNEP %>% arrange(modeltype) %>% mutate(modelorder=seq(1:20))
 
 mod_tableNEPcoeflong <- melt(mod_tableNEP,
-                  id.vars=c("mod", "modelorder", "modeltype", "D_var", "C_var"),
+                  id.vars=c("mod", "modelorder", "modeltype", "D_var", "C_var", "AIC"),
                   measure.vars=c("L_mean", "D_mean", "C_mean" ),
                   variable.name="covariate",
                   value.name="coef")
 
 
 mod_tableNEPerrorlong <- melt(mod_tableNEP,
-                             id.vars=c("mod", "modelorder", "modeltype", "D_var", "C_var"),
+                             id.vars=c("mod", "modelorder", "modeltype", "D_var", "C_var", "AIC"),
                              measure.vars=c("L_se", "D_se", "C_se"),
                              variable.name="covariate2",
                              value.name="error")
@@ -50,9 +50,14 @@ mod_tablelong2$covariate<-factor(mod_tablelong2$covariate,levels=c("Light", "Dis
 #### making the figure ####
 
 fig3<-ggplot(data = mod_tablelong2) +
-  geom_point(aes(x = coef , y = as.factor(desc(modelorder)))) +
-  facet_wrap(~covariate)+
-  geom_vline(xintercept=0)
+  geom_point(aes(x = coef , y = as.factor(desc(modelorder)), color=modeltype)) +
+  facet_wrap(~covariate)+   geom_errorbarh(aes(y=as.factor(desc(modelorder)), xmin=coef-error, xmax=coef+error))+
+  geom_vline(xintercept=0)+theme(axis.text.y = element_blank(), axis.title.y=element_blank())
+
+
+fig3AIC<-ggplot(data = mod_tablelong2) +
+  geom_bar(aes(x = AIC , y = as.factor(desc(modelorder)), color=modeltype)) +
+  facet_wrap(~covariate)
 
 
                           
