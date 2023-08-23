@@ -287,3 +287,46 @@ qrtab <- left_join(tab_ord, qrtab)
 write_csv(qrtab, 'data_working/sparse_quantile_regression_results.csv')
 
 
+
+
+
+
+
+#Figure 4 Attempt by MD
+library(ggrepel)
+
+coefs %>% rename(PR = value_pr, NEP = value_nep, PR_se = se_pr, NEP_se = se_nep, label = lab) %>% 
+  pivot_longer(cols = c(PR,NEP), names_to = "Metric") %>% 
+  mutate(se = case_when(Metric == "PR"~PR_se,
+                        Metric == "NEP"~NEP_se)) %>% 
+  select(-c(PR_se,NEP_se)) %>% 
+  group_by(Metric) %>% arrange(-value) %>%
+  mutate(num = row_number()) %>% 
+  mutate(col = case_when(col == "black"~"Positive Expected",
+                           col == "red"~"Negative Expected",
+                           col == "grey"~"No Hyp.")) %>% 
+  
+  ggplot(aes(x=0, y = value, shape = Metric, color = col))+
+  geom_point(alpha = .8, size = 2)+
+  geom_hline(yintercept = 0, linetype = "dashed")+
+  # geom_errorbar(aes(ymin = value-se, ymax = value+se), alpha = .8, width = .2)+
+  scale_shape_manual(values = c(1,19))+
+  scale_color_manual(values = c("red","grey","black"))+
+  labs(y = expression(paste( 'Coefficient estimate (', beta, ')')))+
+  theme(#axis.text.x =element_text(angle = 45, hjust =1), 
+    panel.background = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.line.y = element_line(),
+    axis.title.x = element_blank(),
+    legend.title = element_blank(),
+    axis.text.x = element_blank(),
+    legend.position = "bottom",
+    strip.background = element_blank())+
+  lims(y = c(-.3,.3))+
+  facet_wrap(Metric~., scales = "free",drop = T)+
+  geom_text_repel(aes(label = label),
+                  min.segment.length = .001,
+                  hjust = 0.1,
+                  show.legend = F)+
+  lims(x=c(0,1))
+
