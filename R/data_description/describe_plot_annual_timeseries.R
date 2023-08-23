@@ -11,7 +11,6 @@ library(tidyverse)
 
 # Load data.
 dat <- read_csv('data_working/across_sites_model_data.csv')
-site_info <- readRDS("data_ignored/lotic_site_info_filtered.rds")
 sites <- read_tsv("data_356rivers/site_data.tsv")
 
 #### Summaries ####
@@ -61,7 +60,7 @@ dev.off()
 # How many site-years are autotrophic?
 aut_sites <- ann %>% 
   mutate(siteyear = paste(site_name, year, sep = '_')) %>%
-  filter(ann_NEP_C > 0 ) # 87, so ~9% of 921 site-years total
+  filter(ann_NEP_C > 0) # 87, so ~9% of 921 site-years total
 
 # How many UNIQUE sites?
 length(unique(aut_sites$site_name))
