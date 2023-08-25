@@ -145,7 +145,7 @@ library(patchwork);library(cowplot)
 Fig_34 = ((fig3+theme(legend.position = "bottom")|fig_4+guides(color = guide_none(),shape = guide_none())+theme(legend.position = "none")))+plot_annotation(tag_levels = "A")+ 
   plot_layout(widths = c(5,3), heights = c(6,.5), guides = "collect")& theme(legend.position = 'bottom')
 Fig_34
-save_plot("figures/Fig_34.png",Fig_34, dpi = 300, base_width = 9, base_height = 5)
+save_plot("figures/Fig_34.png",Fig_34, dpi = 300, base_width = 10, base_height = 12)
 
 
 
