@@ -12,7 +12,6 @@ library(ggthemes)
 
 # Load data.
 dat <- read_csv('data_working/across_sites_model_data.csv')
-site_info <- readRDS("data_ignored/lotic_site_info_filtered.rds")
 sites <- read_tsv("data_356rivers/site_data.tsv")
 
 #### Summaries ####
@@ -59,14 +58,23 @@ mtext(paste0('Autotrophic site years = ',
              '% of ', nrow(ann)), side = 3, line = 1, cex = 1.5)
 dev.off()
 
-# How many site-years are autotrophic?
-aut_sites <- ann %>% 
+# How many site-years are autotrophic at an annual scale?
+ann_aut_sites <- ann %>% 
   mutate(siteyear = paste(site_name, year, sep = '_')) %>%
-  filter(ann_NEP_C > 0 ) # 87, so ~9% of 921 site-years total
+  filter(ann_NEP_C > 0) # 87, so ~9% of 921 site-years total
 
 # How many UNIQUE sites?
 length(unique(aut_sites$site_name))
 # 37 sites are autotrophic at the annual scale
+
+# How many sites are autotrophic?
+aut_sites <- ann %>% 
+  select(site_name, ER = ann_ER_C, GPP = ann_GPP_C, PR, NEP = ann_NEP_C) %>%
+  group_by(site_name) %>%
+  # Using Alice C's workflow to calculate median PR/NEP across all site-years
+  summarize(across(everything(), median, na.rm = T)) %>%
+  ungroup() %>%
+  filter(NEP > 0) # 15, so ~6% of 236 sites total
 
 # Print site names
 site_names <- sites %>%
@@ -76,50 +84,57 @@ aut_sites <- left_join(aut_sites, site_names)
 
 unique(aut_sites$long_name)
 
+# Need to re-create dataset with site-years of data but only for truly
+# autotrophic sites.
+aut_site_names <- unique(aut_sites$site_name)
+
+aut_sites_yrs <- ann_aut_sites %>% 
+  filter(site_name %in% aut_site_names)
+
 # GPP Summary:
 # minimum GPP
-min(aut_sites$ann_GPP_C) # 62
+min(aut_sites_yrs$ann_GPP_C) # 282
 
 # maximum GPP
-max(aut_sites$ann_GPP_C) # 3,755
+max(aut_sites_yrs$ann_GPP_C) # 3,755
 
 # mean GPP
-mean(aut_sites$ann_GPP_C) # 723
+mean(aut_sites_yrs$ann_GPP_C) # 770
 
 # sd GPP
-sd(aut_sites$ann_GPP_C) # 667
+sd(aut_sites_yrs$ann_GPP_C) # 761
 
 # NEP Summary:
 # minimum NEP
-min(aut_sites$ann_NEP_C) # 0.13
+min(aut_sites_yrs$ann_NEP_C) # 6
 
 # maximum NEP
-max(aut_sites$ann_NEP_C) # 1,199
+max(aut_sites_yrs$ann_NEP_C) # 1,199
 
 # mean NEP
-mean(aut_sites$ann_NEP_C) # 108
+mean(aut_sites_yrs$ann_NEP_C) # 144
 
 # sd NEP
-sd(aut_sites$ann_NEP_C) # 163
+sd(aut_sites_yrs$ann_NEP_C) # 197
 
 ##### Heterotrophic sites #####
 
 # How many site-years are heterotrophic?
-het_sites <- ann %>% 
+het_siteyrs <- ann %>% 
   mutate(siteyear = paste(site_name, year, sep = '_')) %>%
-  filter(ann_NEP_C <= 0 )
+  filter(ann_NEP_C <= 0 ) # 834
 
 # min GPP at heterotrophic sites
-min(het_sites$ann_GPP_C) # 10
+min(het_siteyrs$ann_GPP_C) # 10
 
 # max GPP at heterotrophic sites
-max(het_sites$ann_GPP_C) # 3,650
+max(het_siteyrs$ann_GPP_C) # 3,650
 
 # mean GPP at heterotrophic sites
-mean(het_sites$ann_GPP_C) # 250
+mean(het_siteyrs$ann_GPP_C) # 250
 
 # sd GPP at heterotrophic sites
-sd(het_sites$ann_GPP_C) # 294
+sd(het_siteyrs$ann_GPP_C) # 294
 
 #### Other Figures ####
 

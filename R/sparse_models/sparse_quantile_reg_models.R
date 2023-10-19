@@ -287,3 +287,68 @@ qrtab <- left_join(tab_ord, qrtab)
 write_csv(qrtab, 'data_working/sparse_quantile_regression_results.csv')
 
 
+
+
+
+
+
+#Figure 4 Attempt by MD
+library(ggrepel)
+
+fig_4 = coefs %>% mutate(color = case_when(lab %in% c("Width","Stream Surface PAR ","PAR kurtosis")~"Light",
+                                   lab %in% c("Max interstorm", "Annual Discharge Amp")~"Disturbance",
+                                   lab == "Elevation"~"Connectivity",
+                                   T~"Other")) %>% 
+  mutate(color = factor(color, levels = c("Light","Disturbance","Connectivity",NULL))) %>% 
+  
+  rename(PR = value_pr, NEP = value_nep, PR_se = se_pr, NEP_se = se_nep, label = lab) %>% 
+  pivot_longer(cols = c(PR,NEP), names_to = "Metric") %>% 
+  mutate(se = case_when(Metric == "PR"~PR_se,
+                        Metric == "NEP"~NEP_se)) %>% 
+  select(-c(PR_se,NEP_se)) %>% 
+  group_by(Metric, color) %>% arrange(-value) %>%
+  mutate(num = row_number()) %>% 
+  mutate(order = case_when(label == "Width"~2,
+                           label == "Stream Surface PAR "~1,
+                           label == "PAR kurtosis" ~3,
+                           label == "Annual Discharge Amp"~4,
+                           label == "Max interstorm" ~ 5,
+                           label == "Elevation"~6,
+                           label == "Terrestrial NPP" ~ 7,
+                           label == "Mean Air Temp" ~ 8)) %>% 
+  mutate(col = case_when(col == "black"~"Positive Expected",
+                           col == "red"~"Negative Expected",
+                           col == "grey"~"No Hyp.")) %>% 
+  
+  
+  
+  
+  ggplot(aes(y=-order, x = value))+
+  geom_point(alpha = .8, size = 2, show.legend = T, aes(color = color, shape = Metric))+
+  geom_vline(xintercept = 0, linetype = "dashed")+
+  geom_errorbarh(aes(xmin = value-se, xmax = value+se, color = color), alpha = .8, height = 0, show.legend = F)+
+  scale_shape_manual(values = c(1,19))+
+  scale_color_manual(values = c("salmon","lightgreen","dodgerblue","grey"),
+                     label = c("","","",""))+
+  labs(x = expression(paste( 'Coefficient estimate (', beta, ')')))+
+  theme(#axis.text.x =element_text(angle = 45, hjust =1), 
+    panel.background = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.line.x = element_line(),
+    axis.title.y = element_blank(),
+    legend.title = element_blank(),
+    axis.text.y = element_blank(),
+    legend.position = "bottom",
+    strip.background = element_blank())+
+  lims(x = c(-.4,.4))+
+  theme(panel.border = element_rect(fill = "transparent"))+
+  #facet_wrap(Metric~., scales = "free",drop = T)+
+  geom_text(aes(label = label, color = color),
+                  min.segment.length = .001,
+                  position = position_nudge(y = -.2),
+                  show.legend = F, check_overlap = T)+
+  theme(panel.spacing = unit(0,"lines"))
+fig_4
+#question -- is there a way to link these effects to the colors in the previous figure? 
+
+
