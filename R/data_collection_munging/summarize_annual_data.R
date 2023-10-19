@@ -45,9 +45,10 @@ ws <- select(ws, -any_of(sum_columns))
 yearly <- metrics_compiled %>%
   select(site_name = Site_ID, year, any_of(sum_columns)) %>%
   left_join(ws, by = 'site_name') %>%
-  relocate(c('long_name', 'Source', 'lat', 'lon', 'coord_datum', 'alt', 
+  relocate(c('long_name', 'lat', 'lon', 'coord_datum', 'alt', 
              'alt_datum', 'site_type', 'COMID', 'VPU'), .after = 'year') %>%
   select(-NHD_QE_MA, -NHD_VE_MA, -NHD_GNIS_NAME, -NHD_FTYPE, -NHD_FCODE) 
 
 
 write_csv(yearly, 'data_working/annual_summary_data.csv')
+yearly2 <- read_csv('data_working/annual_summary_data.csv')

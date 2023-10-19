@@ -9,6 +9,8 @@ library(corrplot)
 
 dat <- read_csv('data_working/across_sites_model_data.csv')
 
+dd <- dat %>%
+length(unique(dd$site_name))
 # filter dataframe to remove NA's in the relevant variables:
 dd <- dat %>%
     select(site_name, ER = ann_ER_C, GPP = ann_GPP_C, PR, NEP = ann_NEP_C, 
@@ -17,11 +19,11 @@ dd <- dat %>%
            Disch_cv, Disch_ar1, RBI, max_interstorm, ws_area_km2, 
            width_to_area) %>%
     group_by(site_name) %>%
-    summarize(across(everything(), median, na.rm = T)) %>%
+    summarize(across(everything(), mean, na.rm = T)) %>%
     filter(!is.na(PR),
            !is.na(drainage_density_connected),
            !is.infinite(drainage_density_connected),
-           !is.na(Stream_PAR_sum), 
+           !is.na(Stream_PAR_sum),
            !is.na(MOD_ann_NPP)) %>%
     mutate(ER = - ER, 
            log_PR = log(PR),
