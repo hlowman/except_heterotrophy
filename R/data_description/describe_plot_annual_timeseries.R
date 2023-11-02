@@ -84,6 +84,14 @@ aut_sites <- left_join(aut_sites, site_names)
 
 unique(aut_sites$long_name)
 
+# also printing sites that *aren't* autotrophic overall for categorization in manuscript
+always_aut <- unique(aut_sites$site_name)
+sometimes_aut <- unique(ann_aut_sites$site_name)
+occasionally_aut <- sites %>%
+  select(site_name, long_name) %>% # select only site info
+  filter(site_name %in% sometimes_aut) %>% # keep sites that have at least 1 year of aut
+  filter(!site_name %in% always_aut) # remove sites that are predominantly autotrophic on annual scale
+
 # Need to re-create dataset with site-years of data but only for truly
 # autotrophic sites.
 aut_site_names <- unique(aut_sites$site_name)
