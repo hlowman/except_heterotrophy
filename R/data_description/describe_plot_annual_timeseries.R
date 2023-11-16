@@ -79,8 +79,9 @@ aut_sites <- ann %>%
 # make a table of sites that are at least occasionally autotrophic
 aut_sites2 <- ann %>% 
   select(site_name, lat, lon, ER = ann_ER_C, GPP = ann_GPP_C, 
-         PR, NEP = ann_NEP_C) %>%
-  group_by(site_name) %>%
+         PR, NEP = ann_NEP_C, NLCD_LUCat, IGBP_LU_category, Pct_impcov, PrecipWs,
+         Dam_densityperkm2, Dam_normal_vol_m3km2, Waste_point_srcs_perkm2) %>%
+  group_by(site_name, NLCD_LUCat, IGBP_LU_category) %>%
   # Using Alice C's workflow to calculate median PR/NEP across all site-years
   summarize(NEP_max = max(NEP, na.rm = T),
             PR_max = max(PR, na.rm = T),
