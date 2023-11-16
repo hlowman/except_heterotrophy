@@ -145,13 +145,73 @@ library(patchwork);library(cowplot)
 Fig_34 = ((fig3+theme(legend.position = "bottom")|fig_4+guides(color = guide_none(),shape = guide_none())+theme(legend.position = "none")))+plot_annotation(tag_levels = "A")+ 
   plot_layout(widths = c(5,3), heights = c(6,.5), guides = "collect")& theme(legend.position = 'bottom')
 Fig_34
-save_plot("figures/Fig_34.png",Fig_34, dpi = 300, base_width = 10, base_height = 12)
+# save_plot("figures/Fig_34.png",Fig_34, dpi = 300, base_width = 9, base_height = 5)
 
 
 
+## Updated Figure 3 ##
+#Figure 3 changes 11/02/2023
+fig3.2 <- rbind(mod_tablelong2 %>% as_tibble() %>% mutate(dAIC = as.numeric(round(AIC-min(AIC), 1))) %>% 
+  mutate(modeltype = as.factor(modeltype)) %>% 
+  mutate(Metric = case_when(is.na(coef)==T~"PR",T~"NEP")) %>% ungroup() %>% 
+    mutate(L_var = "Light") %>% 
+    group_by(modeltype) %>% slice_max(order_by=AIC, prop = .25) %>% mutate(best = "Best"),
+  
+  mod_tablelong2 %>% as_tibble() %>% mutate(dAIC = as.numeric(round(AIC-min(AIC), 1))) %>% 
+    mutate(modeltype = as.factor(modeltype)) %>% 
+    mutate(Metric = case_when(is.na(coef)==T~"PR",T~"NEP")) %>% ungroup() %>% 
+    mutate(L_var = "Light") %>% 
+    group_by(modeltype) %>% slice_min(order_by=AIC, prop = .755) %>% mutate(best = "Other")) %>% 
+    filter(is.na(coef) == F) %>% 
+    mutate(se = case_when(covariate == "Light" & covariate2 == "L_se"|
+                          covariate == "Disturbance" & covariate2 == "D_se"|
+                          covariate == "Connectivity" & covariate2 == "C_se"~ error, T~NA)) %>% 
+  mutate(D_var = case_when(D_var == "Disch_cv"~ "Discharge (cv)",
+                           D_var == "log_RBI" ~ "Flashiness (RBI)",
+                           D_var == "max_interstorm" ~ "Max Interstorm."),
+         C_var = case_when(C_var == "drainage_density_connected"~"Drainage Density",
+                           C_var == "width_to_area"~"Width:Area",
+                           C_var == "MOD_ann_NPP"~ "Terrestrial NPP",
+                           C_var == "PrecipWs" ~ "Precipitation")) %>% 
+    
+  ggplot() + 
+  geom_rect(aes(fill = modeltype,alpha = modeltype),xmin = -Inf,xmax = Inf,
+            ymin = -Inf,ymax = Inf, show.legend = F) +
+  scale_alpha_manual(values = c(.25,.05,.05,.01))+
+    
+    
+    geom_errorbarh(aes(xmin = coef-se, xmax = coef+se, y = as.factor(desc(modelorder)), height= 0, color = best), show.legend = F)+
+  
+    
+    geom_point(aes(x = coef ,  y = as.factor(desc(modelorder)),
+                 color = best,
+                 shape =case_when(covariate =="Light"~L_var,
+                                  covariate == "Connectivity"~C_var,
+                                  covariate == "Disturbance" ~ D_var)), show.legend = T, size = 4)+
 
+    
+  
+    facet_grid((modeltype)~covariate, scales = "free_y", drop = T, switch = "y", space = "free")+
+  geom_vline(xintercept=0, linetype = "dashed")+
 
+  scale_shape_manual(values = c(15,13,17,8,19,7,10,9,10))+  
+    scale_color_manual(values = c("black","grey70"))+
 
+  theme(legend.position = "bottom")+
+  theme(panel.spacing.x  =unit(0.04, "lines"), panel.spacing.y = unit(0,"lines"),
+        panel.border = element_blank())+
+  theme(axis.text.y = element_blank(), axis.title.y=element_blank())+
+  theme_bw()+theme(panel.grid=element_blank(),strip.background = element_blank(),panel.spacing = unit(1.5, "lines"),plot.margin = margin(t = 10, r = 20, b = 10, l = 30))+
+  theme(axis.text.y = element_blank(),axis.title.y = element_blank(), axis.ticks.y = element_blank(),strip.text.y.left  = element_text(angle = 90),
+        legend.position = "bottom")+
+  labs(x = expression(paste( 'Coefficient estimate (', beta, ')')))+ 
+  guides(size = guide_legend(expression(paste(delta, 'AIC')), direction = "vertical", nrow = 1, reverse = T),
+         shape = guide_legend(override.aes = list(size = 5), title = "Metric"), color = guide_none(), fill = guide_none(), alpha = guide_none())+
+  theme(text = element_text(size=16))
+
+fig3.2 
+
+cowplot::save_plot("Figure3_Updated_SinglePanel_WithCovariates.png", fig3.2, base_width = 9, base_height = 10, dpi = 600)
 
 
 
