@@ -103,7 +103,7 @@ fig3.2 <- rbind(mod_tablelong2 %>% as_tibble() %>% mutate(dAIC = as.numeric(roun
                           covariate == "Connectivity" & covariate2 == "C_se"~ error, T~NA)) %>% 
   mutate(D_var = case_when(D_var == "Disch_cv"~ "Discharge (cv)",
                            D_var == "log_RBI" ~ "Flashiness (RBI)",
-                           D_var == "max_interstorm" ~ "Max Interstorm."),
+                           D_var == "max_interstorm" ~ "Max Interstorm"),
          C_var = case_when(C_var == "drainage_density_connected"~"Drainage Density",
                            C_var == "width_to_area"~"Width:Area",
                            C_var == "MOD_ann_NPP"~ "Terrestrial NPP",
