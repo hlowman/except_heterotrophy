@@ -1,5 +1,6 @@
 ## Matt Dunkle made this code May 29 2023 ##
 ## Melissa D. edited on June 27 2023 ##
+## Alice. edited on Dec 2023 ##
 
 #data = across_sites_model_data#
 
@@ -16,17 +17,25 @@ across_sites_model_data <- read.csv(here::here("data_working/across_sites_model_
 
 literature_data <- read.csv(here::here("data_working/literature_streams_data_for_PCA.csv"), header=TRUE, fileEncoding = "UTF-8-BOM")
 
-literature_data2<- literature_data %>%  mutate(Class = "Literature")
+literature_data2 <- literature_data %>%  mutate(Class = "Literature")
+
+auto_class <- read_csv('data_working/Autotrophic_site_classifications.csv') %>%
+  select(-Site, -lat, -lon)
 
 autotrophic = across_sites_model_data %>%
   filter(!is.na(site_name))%>%
   group_by(site_name) %>%
-  summarize(across(where(is.numeric), median, na.rm = T)) %>% ungroup() %>% 
-  mutate(code = paste(site_name, year, sep = "_")) %>% 
-  select(site_name, year, lat, lon, ann_GPP_C, ann_ER_C, ann_NEP_C,  PR,PAR_sum, Disch_cv, max_interstorm, RBI, width_to_area, PrecipWs, MOD_ann_NPP, drainage_density_connected, PAR_kurt, ElevWs, Width, Stream_PAR_sum) %>% 
+  summarize(max_NEP = max(ann_NEP_C, na.rm = T),
+            across(where(is.numeric), \(x) median(x, na.rm = T))) %>% 
+  ungroup() %>% 
+  select(site_name, lat, lon, ann_GPP_C, ann_ER_C, ann_NEP_C, max_NEP, PR, 
+         Stream_PAR_sum, max_interstorm, MOD_ann_NPP, PAR_kurt, ElevWs, Width) %>% 
+  # select(site_name, year, lat, lon, ann_GPP_C, ann_ER_C, ann_NEP_C,  PR,PAR_sum, Disch_cv, max_interstorm, RBI, width_to_area, PrecipWs, MOD_ann_NPP, drainage_density_connected, PAR_kurt, ElevWs, Width, Stream_PAR_sum) %>% 
   filter(complete.cases(across(ann_GPP_C:Width))) %>% as_tibble() %>% 
-  mutate(Class = case_when(PR<1~"Heterotrophic",
-                           PR>1~"Autotrophic"))
+  mutate(Class = case_when(PR > 1 ~ "Autotrophic", 
+                           max_NEP > 0 ~ "Sometimes Autotrophic",
+                           PR < 1 ~ "Heterotrophic")) %>%
+  left_join(auto_class, by = 'site_name')
 
 
 
