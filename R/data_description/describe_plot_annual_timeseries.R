@@ -67,6 +67,25 @@ ann_aut_sites <- ann %>%
 length(unique(ann_aut_sites$site_name))
 # 37 sites are autotrophic at the annual scale
 
+# And what do the summaries of these look like?
+# Start with the original, full dataset
+ann_aut_sites_summ <- ann %>%
+  # filter down to the 37 sites of choice
+  filter(site_name %in% unique(ann_aut_sites$site_name)) %>%
+  group_by(site_name, lat, lon) %>%
+  summarize(med_NEP = median(ann_NEP_C),
+            max_NEP = max(ann_NEP_C)) %>%
+  ungroup()
+
+# Percentiles of autotrophy
+quantile(ann_aut_sites_summ$med_NEP, c(0.10, 0.90))
+# 10th = -112.04
+# 90th = 201.32
+
+quantile(ann_aut_sites_summ$max_NEP, c(0.10, 0.90))
+# 10th = 13.45
+# 90th = 273.27
+
 # How many sites are autotrophic?
 aut_sites <- ann %>% 
   select(site_name, ER = ann_ER_C, GPP = ann_GPP_C, PR, NEP = ann_NEP_C) %>%
@@ -96,34 +115,34 @@ occasionally_aut <- sites %>%
 # autotrophic sites.
 aut_site_names <- unique(aut_sites$site_name)
 
-aut_sites_yrs <- ann_aut_sites %>% 
+aut_sites_allyrs <- ann %>% 
   filter(site_name %in% aut_site_names)
 
 # GPP Summary:
 # minimum GPP
-min(aut_sites_yrs$ann_GPP_C) # 282
+min(aut_sites_allyrs$ann_GPP_C) # 282
 
 # maximum GPP
-max(aut_sites_yrs$ann_GPP_C) # 3,755
+max(aut_sites_allyrs$ann_GPP_C) # 3,755
 
 # mean GPP
-mean(aut_sites_yrs$ann_GPP_C) # 770
+mean(aut_sites_allyrs$ann_GPP_C) # 732
 
 # sd GPP
-sd(aut_sites_yrs$ann_GPP_C) # 761
+sd(aut_sites_allyrs$ann_GPP_C) # 712
 
 # NEP Summary:
 # minimum NEP
-min(aut_sites_yrs$ann_NEP_C) # 6
+min(aut_sites_allyrs$ann_NEP_C) # -254
 
 # maximum NEP
-max(aut_sites_yrs$ann_NEP_C) # 1,199
+max(aut_sites_allyrs$ann_NEP_C) # 1,199
 
 # mean NEP
-mean(aut_sites_yrs$ann_NEP_C) # 144
+mean(aut_sites_allyrs$ann_NEP_C) # 109
 
 # sd NEP
-sd(aut_sites_yrs$ann_NEP_C) # 197
+sd(aut_sites_allyrs$ann_NEP_C) # 202
 
 ##### Heterotrophic sites #####
 
@@ -153,33 +172,33 @@ unique(het_sites$long_name) # some long names missing
 # heterotrophic sites.
 het_site_names <- unique(het_sites$site_name)
 
-het_sites_yrs <- ann_het_sites %>% 
+het_sites_allyrs <- ann %>% 
   filter(site_name %in% het_site_names)
 
 # min GPP at heterotrophic sites
-min(het_siteyrs$ann_GPP_C) # 10
+min(het_sites_allyrs$ann_GPP_C) # 10
 
 # max GPP at heterotrophic sites
-max(het_siteyrs$ann_GPP_C) # 3,650
+max(het_sites_allyrs$ann_GPP_C) # 3,650
 
 # mean GPP at heterotrophic sites
-mean(het_siteyrs$ann_GPP_C) # 250
+mean(het_sites_allyrs$ann_GPP_C) # 264
 
 # sd GPP at heterotrophic sites
-sd(het_siteyrs$ann_GPP_C) # 294
+sd(het_sites_allyrs$ann_GPP_C) # 314
 
 # NEP Summary:
 # minimum NEP
-min(het_sites_yrs$ann_NEP_C) # -1,770
+min(het_sites_allyrs$ann_NEP_C) # -1,770
 
 # maximum NEP
-max(het_sites_yrs$ann_NEP_C) # -0.3
+max(het_sites_allyrs$ann_NEP_C) # 308
 
 # mean NEP
-mean(het_sites_yrs$ann_NEP_C) # -290
+mean(het_sites_allyrs$ann_NEP_C) # -276
 
 # sd NEP
-sd(het_sites_yrs$ann_NEP_C) # 277
+sd(het_sites_allyrs$ann_NEP_C) # 279
 
 #### Other Figures ####
 
