@@ -4,7 +4,7 @@ library(ggplot2)
 library(reshape2)
 library(patchwork)
 library(cowplot)
-
+library(here)
 
 mod_tableNEP<-read.csv('data_working/constrained_quantile_regression_results_NEP.csv')
 
@@ -82,21 +82,20 @@ fig3
 
 
 ## Updated Figure 3 ##
-#Figure 3 changes 11/02/2023 (MD) and 12/5/2023 (CT)
-fig3.2 <- rbind(mod_tablelong2 %>% as_tibble() %>% mutate(dAIC = as.numeric(round(AIC-min(AIC), 1))) %>% 
-                  mutate(modeltype = as.factor(modeltype)) %>% 
-                  mutate(Metric = case_when(is.na(coef)==T~"PR",T~"NEP")) %>% ungroup() %>% 
-                  mutate(L_var = "Light") %>% 
-                  # selecting the lowest 27% of AIC values overall: NOTE: Grouping by modeltype did not work if there were <4 models in a modeltype (when prop was = 0.25)
-                  slice_min(order_by=AIC, prop = .27) %>% mutate(best = "Best"),    # changed prop to 0.27 and 0.73 to keep both models with AICd = 9.4 in the "Best" category
-                
-                mod_tablelong2 %>% as_tibble() %>% mutate(dAIC = as.numeric(round(AIC-min(AIC), 1))) %>% 
-                  mutate(modeltype = as.factor(modeltype)) %>% 
-                  mutate(Metric = case_when(is.na(coef)==T~"PR",T~"NEP")) %>% ungroup() %>% 
-                  mutate(L_var = "Light") %>% 
-                  # selecting the highest 73% of AIC values overall. See above re: grouping by modeltype
-                  slice_max(order_by=AIC, prop = .73) %>% mutate(best = "Other")) %>% # changed this prop to 0.73 to keep both models with AICd = 9.4 in the "Best" category
-  
+#Figure 3 changes 11/02/2023 (MD),  12/5/2023 (CT), and 1/8/24 (CT)
+
+fig3.2 <- rbind(mod_tablelong2 %>% as_tibble() %>% 
+          mutate(dAIC = as.numeric(round(AIC-min(AIC), 1))) %>% 
+          mutate(modeltype = as.factor(modeltype)) %>% 
+          mutate(Metric = case_when(is.na(coef)==T~"PR",T~"NEP")) %>% ungroup() %>% 
+          mutate(L_var = "Light") %>% 
+          mutate(best = case_when(
+                            dAIC <= 2 ~ 'Best',
+                            dAIC > 2 ~ 'Other'
+                            )
+                      )
+                ) %>%
+
   filter(is.na(coef) == F) %>% 
   mutate(se = case_when(covariate == "Light" & covariate2 == "L_se"|
                           covariate == "Disturbance" & covariate2 == "D_se"|
@@ -146,7 +145,7 @@ fig3.2 <- rbind(mod_tablelong2 %>% as_tibble() %>% mutate(dAIC = as.numeric(roun
 
 fig3.2 
 
-cowplot::save_plot("Figure3_UpdatedDec5_SinglePanel_WithCovariates.png", fig3.2, base_width = 9, base_height = 10, dpi = 600)
+cowplot::save_plot(here("figures/Figure3_UpdatedJan08_SinglePanel_WithCovariates.png"), fig3.2, base_width = 9, base_height = 10, dpi = 600)
 
 
 
