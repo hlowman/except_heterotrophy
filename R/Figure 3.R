@@ -85,13 +85,13 @@ fig3
 #Figure 3 changes 11/02/2023 (MD),  12/5/2023 (CT), and 1/8/24 (CT)
 
 fig3.2 <- rbind(mod_tablelong2 %>% as_tibble() %>% 
-          mutate(dAIC = as.numeric(round(AIC-min(AIC), 1))) %>% 
+          mutate(dAIC = as.numeric(round(min(AIC)-AIC, 1))) %>% 
           mutate(modeltype = as.factor(modeltype)) %>% 
           mutate(Metric = case_when(is.na(coef)==T~"PR",T~"NEP")) %>% ungroup() %>% 
           mutate(L_var = "Light") %>% 
           mutate(best = case_when(
-                            dAIC <= 2 ~ 'Best',
-                            dAIC > 2 ~ 'Other'
+                            dAIC >= -2 ~ 'Best',
+                            dAIC < -2 ~ 'Other'
                             )
                       )
                 ) %>%
@@ -114,10 +114,10 @@ fig3.2 <- rbind(mod_tablelong2 %>% as_tibble() %>%
   scale_alpha_manual(values = c(.25,.05,.05,.01))+
   
   
-  geom_errorbarh(aes(xmin = coef-se, xmax = coef+se, y = as.factor(desc(modelorder)), height= 0, color = best), show.legend = F)+
+  geom_errorbarh(aes(xmin = coef-se, xmax = coef+se, y = as.factor(modelorder), height= 0, color = best), show.legend = F)+
   
   
-  geom_point(aes(x = coef ,  y = as.factor(desc(modelorder)),
+  geom_point(aes(x = coef ,  y = as.factor(modelorder),
                  color = best,
                  shape =case_when(covariate =="Light"~L_var,
                                   covariate == "Connectivity"~C_var,
@@ -145,16 +145,19 @@ fig3.2 <- rbind(mod_tablelong2 %>% as_tibble() %>%
 
 fig3.2 
 
-cowplot::save_plot(here("figures/Figure3_UpdatedJan08_SinglePanel_WithCovariates.png"), fig3.2, base_width = 9, base_height = 10, dpi = 600)
+cowplot::save_plot(here("figures/Figure3_NEP.png"), 
+                   fig3.2, base_width = 9, base_height = 10, dpi = 600)
+cowplot::save_plot(here("figures/Figure3_PR.png"), 
+                   fig3.2, base_width = 9, base_height = 10, dpi = 600)
 
 
 
 #Figure 4 Attempt by MD
 library(ggrepel)
 coefs = read.csv("data_working/sparse_quantile_regression_results_NEP_PR.csv")
-fig_4 = coefs %>% mutate(color = case_when(lab %in% c("Width","Stream Surface PAR ","PAR kurtosis")~"Light",
+fig_4 = coefs %>% mutate(color = case_when(lab %in% c("Width", "Stream Surface PAR ", "PAR kurtosis")~"Light",
                                            lab %in% c("Max interstorm", "Annual Discharge Amp")~"Disturbance",
-                                           lab == "Elevation"~"Connectivity",
+                                           lab == "Terrestrial NPP"~"Connectivity",
                                            T~"Other")) %>% 
   mutate(color = factor(color, levels = c("Light","Disturbance","Connectivity",NULL))) %>% 
   
@@ -170,25 +173,23 @@ fig_4 = coefs %>% mutate(color = case_when(lab %in% c("Width","Stream Surface PA
                            label == "PAR kurtosis" ~3,
                            label == "Annual Discharge Amp"~4,
                            label == "Max interstorm" ~ 5,
-                           label == "Elevation"~6,
-                           label == "Terrestrial NPP" ~ 7,
+                           label == "Terrestrial NPP" ~ 6,
+                           label == "Elevation"~7,
                            label == "Mean Air Temp" ~ 8)) %>% 
-  mutate(col = case_when(col == "black"~"Positive Expected",
-                         col == "red"~"Negative Expected",
-                         col == "grey"~"No Hyp.")) %>% 
-  
-  
-  
-  
+ 
   ggplot(aes(y=-order, x = value))+
   geom_point(alpha = .8, size = 2, show.legend = T, aes(color = color, shape = Metric))+
   geom_vline(xintercept = 0, linetype = "dashed")+
   geom_errorbarh(aes(xmin = value-se, xmax = value+se, color = color), alpha = .8, height = 0, show.legend = F)+
-  scale_shape_manual(values = c(19,1))+
+  scale_shape_manual(values = c(19,1), guide = guide_legend(order = 1))+
   scale_color_manual(values = c("#F8766D", "#7CAE00", "#00BFC4","grey"),
-                     label = c("","","",""))+
+                     label = c("Light","Disturbance","Connectivity","Other"),
+                     guide = guide_legend(order = 2))+
   labs(x = expression(paste( 'Coefficient estimate (', beta, ')')))+
-  theme(#axis.text.x =element_text(angle = 45, hjust =1), 
+  guides(
+    shape = guide_legend(order = 1), 
+    color = guide_legend(order = 2))+
+  theme(
     panel.background = element_blank(),
     axis.ticks.y = element_blank(),
     axis.line.x = element_line(),
@@ -196,10 +197,13 @@ fig_4 = coefs %>% mutate(color = case_when(lab %in% c("Width","Stream Surface PA
     legend.title = element_blank(),
     axis.text.y = element_blank(),
     legend.position = "bottom",
+    legend.box = 'vertical',
+    legend.key=element_blank(),
+    legend.spacing.y = unit(0.1, "cm"),
+    legend.margin = margin(-0.2,0,0,0, unit="cm"),
+    panel.border = element_rect(fill = "transparent"),
     strip.background = element_blank())+
   lims(x = c(-.4,.4))+
-  theme(panel.border = element_rect(fill = "transparent"))+
-  #facet_wrap(Metric~., scales = "free",drop = T)+
   geom_text(aes(label = label, color = color),
             min.segment.length = .001,
             position = position_nudge(y = -.2),
@@ -210,6 +214,8 @@ fig_4
 #Merging Figures 3-4
 
 
+cowplot::save_plot(here("figures/Figure4_sparse_NEP_PR.png"), 
+                   fig_4, base_width = 4, base_height = 5, dpi = 600)
                           
 
 Fig_34 = ((fig3+theme(legend.position = "bottom")|fig_4+guides(color = guide_none(),shape = guide_none())+theme(legend.position = "none")))+plot_annotation(tag_levels = "A")+ 

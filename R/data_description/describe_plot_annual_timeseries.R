@@ -28,34 +28,34 @@ unique(ann$site_name)
 
 # Figure of all sites with autotrophic ones colored.
 png('figures/distribution_annual_NEP.png', width = 600, height = 400)
-par(mfrow = c(1, 2), mar = c(5,2,3,1))
-plot(density(ann$ann_NEP_C), xlim = c(-6200, 2000), main = '', yaxt = 'n',
-     xlab = expression(paste('Annual NEP (g',O[2],'/',m^2,'/d)' )), ylab = '')
-mtext('Density', 2, 0.7)
-dd = density(ann$ann_NEP_C, na.rm = T)
-ddo = order(dd$x)
-xdens = dd$x[ddo]
-ydens = dd$y[ddo]
-xdens_ut = xdens[xdens >= 0]
-ydens_ut = ydens[xdens >= 0]
-polygon(c(xdens_ut, rev(xdens_ut)), c(ydens_ut, rep(0, length(ydens_ut))),
-        col='lightgreen', border='lightgreen')
-lines(dd)
-
-dd = density(log(-ann$ann_GPP_C/ann$ann_ER_C))
-plot(dd, main = '', xlab = 'Log(GPP/ER)' , ylab = '', yaxt = 'n')
-ddo = order(dd$x)
-xdens = dd$x[ddo]
-ydens = dd$y[ddo]
-xdens_ut = xdens[xdens >= 0]
-ydens_ut = ydens[xdens >= 0]
-polygon(c(xdens_ut, rev(xdens_ut)), c(ydens_ut, rep(0, length(ydens_ut))),
-        col='lightgreen', border='lightgreen')
-lines(dd)
-par(mfrow = c(1,1), new = T)
-mtext(paste0('Autotrophic site years = ',
-             100 * round(length(which(ann$ann_NEP_C>0))/nrow(ann),3), 
-             '% of ', nrow(ann)), side = 3, line = 1, cex = 1.5)
+    par(mfrow = c(1, 2), mar = c(5,2,3,1))
+    plot(density(ann$ann_NEP_C), xlim = c(-6200, 2000), main = '', yaxt = 'n',
+         xlab = expression(paste('Annual NEP (g',O[2],'/',m^2,'/d)' )), ylab = '')
+    mtext('Density', 2, 0.7)
+    dd = density(ann$ann_NEP_C, na.rm = T)
+    ddo = order(dd$x)
+    xdens = dd$x[ddo]
+    ydens = dd$y[ddo]
+    xdens_ut = xdens[xdens >= 0]
+    ydens_ut = ydens[xdens >= 0]
+    polygon(c(xdens_ut, rev(xdens_ut)), c(ydens_ut, rep(0, length(ydens_ut))),
+            col='lightgreen', border='lightgreen')
+    lines(dd)
+    
+    dd = density(log(-ann$ann_GPP_C/ann$ann_ER_C))
+    plot(dd, main = '', xlab = 'Log(GPP/ER)' , ylab = '', yaxt = 'n')
+    ddo = order(dd$x)
+    xdens = dd$x[ddo]
+    ydens = dd$y[ddo]
+    xdens_ut = xdens[xdens >= 0]
+    ydens_ut = ydens[xdens >= 0]
+    polygon(c(xdens_ut, rev(xdens_ut)), c(ydens_ut, rep(0, length(ydens_ut))),
+            col='lightgreen', border='lightgreen')
+    lines(dd)
+    par(mfrow = c(1,1), new = T)
+    mtext(paste0('Autotrophic site years = ',
+                 100 * round(length(which(ann$ann_NEP_C>0))/nrow(ann),3), 
+                 '% of ', nrow(ann)), side = 3, line = 1, cex = 1.5)
 dev.off()
 
 # How many site-years are autotrophic at an annual scale?
@@ -95,6 +95,22 @@ aut_sites <- ann %>%
   ungroup() %>%
   filter(NEP > 0) # 15, so ~6% of 236 sites total
 
+# make a table of sites that are at least occasionally autotrophic
+aut_sites2 <- ann %>% 
+  select(site_name, lat, lon, ER = ann_ER_C, GPP = ann_GPP_C, 
+         PR, NEP = ann_NEP_C, NLCD_LUCat, IGBP_LU_category, Pct_impcov, PrecipWs,
+         Dam_densityperkm2, Dam_normal_vol_m3km2, Waste_point_srcs_perkm2) %>%
+  group_by(site_name, NLCD_LUCat, IGBP_LU_category) %>%
+  # Using Alice C's workflow to calculate median PR/NEP across all site-years
+  summarize(NEP_max = max(NEP, na.rm = T),
+            PR_max = max(PR, na.rm = T),
+            across(everything(), median, na.rm = T)) %>%
+  ungroup() %>%
+  arrange(desc(NEP)) %>%
+  left_join(select(sites, site_name, long_name)) %>%
+  filter(NEP_max > 0) # 15, so ~6% of 236 sites total
+
+write_csv(aut_sites2, 'data_working/autotrophic_sites.csv')
 # Print site names
 site_names <- sites %>%
   select(site_name, long_name)

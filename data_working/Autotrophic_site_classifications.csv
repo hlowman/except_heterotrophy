@@ -1,0 +1,38 @@
+Site,site_name,lat,lon,primary_class,secondary_class,Group,dam
+"Pecos Rv nr Sheffield, TX",nwis_08447000,30.65961,-101.77,desert,,desert/snowmelt,0
+"Pecos Rv nr Girvin, TX",nwis_08446500,31.1132,-102.418,desert,,desert/snowmelt,0
+"Pecos Rv at Brotherton Rh nr Pandale, TX",nwis_08447300,30.314,-101.742,desert,,desert/snowmelt,0
+SNAKE RIVER NR ADRIAN OR,nwis_13173600,43.73099,-117.072,desert,agri,desert/snowmelt,0
+"SOUTH PLATTE RIVER AT ENGLEWOOD, CO.",nwis_06711565,39.66499,-105.004,urban,desert,urban/ag,0
+"North Canadian River near Harrah, OK",nwis_07241550,35.50034,-97.1939,agri,urban,urban/ag,0
+"Arkansas River at Tulsa, OK",nwis_07164500,36.14065,-96.0064,urban,dam,urban/ag,1
+SAN JOAQUIN R AB MERCED R NR NEWMAN CA,nwis_11273400,37.34722,-120.976,agri,,agriculture,0
+BOISE RIVER NR PARMA ID,nwis_13213000,43.78167,-116.973,agri,,agriculture,0
+"EAST CANYON CREEK AB EAST CYN RES NR MORGAN, UTAH",nwis_10133980,40.87078,-111.585,snowmelt,desert,desert/snowmelt,0
+"EAST CANYON CREEK NEAR JEREMY RANCH, UT",nwis_10133800,40.75967,-111.564,snowmelt,desert,desert/snowmelt,0
+"E CANYON CR BL I-80 REST STOP NR PARK CITY, UT",nwis_10133650,40.72384,-111.52,snowmelt,desert,desert/snowmelt,0
+"RIFLE RIVER NEAR STERLING, MI",nwis_04142000,44.07252,-84.02,urban,,urban/ag,0
+"AU SABLE RIVER NEAR RED OAK, MI",nwis_04136000,44.67696,-84.2925,agri,,agriculture,0
+"GRAND RIVER NEAR EASTMANVILLE, MI",nwis_04119400,43.02419,-86.0264,urban,agri,urban/ag,0
+"Blanco Rv at Halifax Rch nr Kyle, TX",nwis_08171290,30.00556,-97.9525,agri,,agriculture,0
+"BLACK EARTH CREEK AT BLACK EARTH, WI",nwis_05406500,43.13417,-89.7322,agri,,agriculture,0
+"SUGAR RIVER NEAR VERONA, WI",nwis_05435950,42.94917,-89.5442,agri,,agriculture,0
+"KALAMAZOO RIVER AT NEW RICHMOND, MI",nwis_04108660,42.65086,-86.1067,agri,dam,agriculture,1
+"SOUTH BRANCH POTOMAC RIVER NEAR SPRINGFIELD, WV",nwis_01608500,39.44704,-78.6542,agri,,agriculture,0
+"POTOMAC RIVER NEAR WASH, DC LITTLE FALLS PUMP STA",nwis_01646500,38.94978,-77.1276,urban,,urban/ag,0
+"Juniata River at Newport, PA",nwis_01567000,40.47842,-77.1291,urban,,urban/ag,0
+"EAGLE CREEK AT ZIONSVILLE, IN",nwis_03353200,39.94643,-86.2603,urban,agri,urban/ag,0
+"Susquehanna River at Harrisburg, PA",nwis_01570500,40.25481,-76.8861,urban,dam,urban/ag,1
+"WHITE RIVER AT HAZLETON, IN",nwis_03374100,38.48977,-87.55,agri,,agriculture,0
+"GREENBRIER RIVER AT ALDERSON, WV",nwis_03183500,37.72429,-80.6415,agri,urban,urban/ag,0
+RUSSIAN R A DIGGER BEND NR HEALDSBURG CA,nwis_11463980,38.63297,-122.856,agri,urban,urban/ag,0
+"East Fork Black River near Lesterville, MO",nwis_07061270,37.55256,-90.8424,agri,,agriculture,0
+"BRANDYWINE CREEK AT WILMINGTON, DE",nwis_01481500,39.7695,-75.5767,urban,dam,urban/ag,1
+"Brandywine Creek at Chadds Ford, PA",nwis_01481000,39.86983,-75.5933,urban,,urban/ag,0
+"East Branch Brandywine Creek below Downingtown, PA",nwis_01480870,39.96872,-75.6733,urban,dam,urban/ag,1
+"West Branch Brandywine Creek at Modena, PA",nwis_01480617,39.96177,-75.8013,urban,agri,urban/ag,0
+Delaware River at Trenton NJ,nwis_01463500,40.22167,-74.7781,urban,,urban/ag,0
+Raritan River at Manville NJ,nwis_01400500,40.55556,-74.5828,urban,,urban/ag,0
+"CLEAR CREEK AT LILLY BRIDGE NEAR LANCING, TN",nwis_03539778,36.10313,-84.7183,agri,,agriculture,0
+"COOSA RIVER AT STATE LINE, AL/GA",nwis_02397530,34.20176,-85.4475,agri,,agriculture,0
+"CLACKAMAS RIVER NEAR OREGON CITY, OR",nwis_14211010,45.37929,-122.577,agri,urban,agriculture,0

@@ -1,0 +1,14 @@
+Variable,value_con_nep,se_con_nep,value_con_pr,se_con_pr,value_pr,se_pr,value_nep,se_nep,min,max,Units
+Total PAR at stream surface,0.478, $pm 0.24,0.335, $pm 0.16,0.116, $pm 0.02,NA, ,1.8464075235719668,15.272468464570458,mol m$^{-2}$ s$^{-1}$
+Discharge coefficient of variation,-0.084, $pm 0.13,-0.382, $pm 0.21,NA, ,NA, ,0.07,0.9,NA
+Richards Baker Flashiness Index,-0.173, $pm 0.15,-0.51, $pm 0.26,NA, ,NA, ,0.01908911781911384,1.213103863923196,NA
+Maximum interstorm interval,0.403, $pm 0.42,0.539, $pm 0.28,0.017, $pm 0.02,0.081, $pm 0.02,9,110,days
+Drainage density of connected reaches,-0.102, $pm 0.09,-0.116, $pm 0.19,NA, ,-0.063, $pm 0.02,1.6887711433568387e-5,1.3111221212232846,m km$^{-2}
+MODIS annual NPP,0.035, $pm 0.09,0.214, $pm 0.21,NA, ,NA, ,100,1266.674925,gC m$^{-2}$ y$^{-1}$
+Stream width to watershed area ratio,-0.141, $pm 0.14,-0.063, $pm 0.21,NA, ,NA, ,0.01882415106418394,3.942579438059442,m km$^{-2}
+Total Precipitation,0.015, $pm 0.07,0.06, $pm 0.22,NA, ,NA, ,382.6129725041822,1862.9835486580105,mm y$^{-1}$
+Mean Air Temp,NA, ,NA, ,-0.246, $pm 0.02,NA, ,NA,NA,NA
+PAR kurtosis,NA, ,NA, ,-0.221, $pm 0.03,-0.158, $pm 0.02,-0.06,0.12,NA
+Elevation,NA, ,NA, ,0.089, $pm 0.02,0.185, $pm 0.02,11.7711,2621.9526,m
+Annual Discharge Amplitude,NA, ,NA, ,0.082, $pm 0.02,NA, ,NA,NA,NA
+Width,NA, ,NA, ,0.003, $pm 0.02,0.064, $pm 0.02,NA,NA,NA
