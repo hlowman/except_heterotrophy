@@ -390,7 +390,17 @@ sites_nhd = sites_nhd[! duplicated(sites_nhd$site_name),]
 #save yer data
 sites_nhd = arrange(sites_nhd, region, site_name) %>%
   relocate(c('lat', 'lon'), .before = coord_datum)
+
+# Compute the influence of dams across sites:
+sites_nhd <- mutate(sites_nhd,
+                    Dam_influence = case_when(struct.dam_flag %in% 
+                                                c("50", "80", "95") ~ 0.5, # Potential = 5-50%
+                                              struct.dam_flag == "0" ~ 1, # Certain = 100%
+                                              TRUE ~ 0)) # Else = NA
+
+
 write_csv(sites_nhd, 'data_356rivers/watershed_summary_data.csv')
+sites_nhd <- read_csv('data_356rivers/watershed_summary_data.csv')
 
 
 # # 4. get MODIS data (this section incomplete) ####

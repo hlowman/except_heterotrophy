@@ -135,7 +135,7 @@ glimpse(d)
 glimpse(ws_dat)
 
 d <- left_join(d, select(ws_dat, site_name, ends_with('flow_length'), 
-                            starts_with('drainage_density')))
+                            starts_with('drainage_density'), Dam_influence))
 
 d <- left_join(d, storms)
 
@@ -151,4 +151,5 @@ d <- d %>%
 
 
 write_csv(d, 'data_working/across_sites_model_data.csv')
+
 

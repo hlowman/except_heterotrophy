@@ -99,7 +99,7 @@ sp_pw <- full_join(pw_hq, sp_sub, by = c('site_name', 'date')) %>%
          year = lubridate::year(date)) %>%
   select(-K600_sp)
 
-sp_pw <- pw_site_dat %>% select(site_name, long_name) %>%
+sp_pw <- pw_site_dat %>% select(site_name, long_name, Dam_binary) %>%
   right_join(sp_pw, by = 'site_name') %>%
   rename(PAR = PAR_sum, Stream_PAR = Stream_PAR_sum, LAI = LAI_proc)
   

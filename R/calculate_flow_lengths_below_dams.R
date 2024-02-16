@@ -13,8 +13,8 @@ dams <- read_csv('data_ignored/nabd_dams.csv') %>%
 sites <- read_csv('data_356rivers/watershed_summary_data.csv')
 
 # functions for working with dams dataset:
-COMID <- sites$COMID[i]
-VPU <- sites$VPU[5]
+COMID <- sites$COMID[1]
+VPU <- sites$VPU[1]
 
 a <- nhdplusTools::map_nhdplus(outlets = list(COMID),
                                flowline_only = TRUE)
@@ -92,3 +92,10 @@ sites <- sites %>%
            drainage_density_connected = connected_flow_length/NHD_TOTDASQKM_corr)
 
 write_csv(sites, 'data_356rivers/watershed_summary_data.csv')
+
+
+# compare dam metrics:
+
+plot(sites$DamDensWs, sites$connected_flow_length/sites$total_flow_length)
+plot(sites$DamNIDStorWs, sites$DamDensWs, xlim = c(0, 1000000))
+
