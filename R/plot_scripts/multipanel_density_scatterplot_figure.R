@@ -138,48 +138,48 @@ plot_comb_dens <- function(dat, var, name, log = FALSE){
 col_pal <- c('forestgreen',
              'sienna4',
              'darkgreen')
-png(file = 'figures/covariate_densities.png', width = 10, height = 6, type = 'cairo',
+png(file = 'figures/covariate_densities.png', width = 8.5, height = 6.75, type = 'cairo',
     res = 300, units = 'in')
 # par(mfrow = c(4,1),
 #     mar = c(0.2,0,0.2,0),
 #     oma = c(3,3,2,2))
 par(mfrow = c(4,3),
     mar = c(2.5,2.1,1,0.1),
-    oma = c(3,4,2,4))
+    oma = c(2.5,3.5,1,3.5))
 
 # plot.new()
 box_coords <- par("usr")  # Get the user coordinates of the plotting area
 # rect(box_coords[1], box_coords[3], box_coords[2], box_coords[4], border = 'red', lwd = 2)
 plot_comb_dens(dat, 'Stream_PAR_sum', 'Stream PAR')
-rect(64, -.20, 66.5, 0.48, col = "#F8766D", lwd = 2, xpd = NA)
-rect(-3.7, -.20, 66.5, 0.48, border = "black", lwd = 2, xpd = NA)
-rect(64, -.88, 66.5, -.2, col =  "#7CAE00", lwd = 2, xpd = NA)
-rect(-3.7, -.88, 66.5, -.2, border =  "black", lwd = 2, xpd = NA)
-rect(64, -1.56, 66.5, -0.88, col = "#00BFC4", lwd = 2, xpd = NA)
-rect(-3.7, -1.56, 66.5, -0.88, border = "black", lwd = 2, xpd = NA)
-rect(64, -2.24, 66.5, -1.56, col = 'grey', lwd = 2, xpd = NA)
-rect(-3.7, -2.24, 66.5, -1.56, border = 'black', lwd = 2, xpd = NA)
+rect(65.5, -.16, 68, 0.48, col = "#FBA59F", lwd = 2, xpd = NA)
+rect(-4.2, -.16, 68, 0.48, border = "black", lwd = 2, xpd = NA)
+rect(65.5, -.8, 68, -.16, col =  "#D0ED96", lwd = 2, xpd = NA)
+rect(-4.2, -.8, 68, -.16, border =  "black", lwd = 2, xpd = NA)
+rect(65.5, -1.44, 68, -0.8, col = "#75E5E5", lwd = 2, xpd = NA)
+rect(-4.2, -1.44, 68, -0.8, border = "black", lwd = 2, xpd = NA)
+rect(65.5, -2.08, 68, -1.44, col = 'grey', lwd = 2, xpd = NA)
+rect(-4.2, -2.08, 68, -1.44, border = 'black', lwd = 2, xpd = NA)
 plot_comb_dens(dat, 'PAR_kurt', 'PAR Kurtosis')
 plot_comb_dens(dat, 'Width', 'Width', log = TRUE)
-mtext('Light', side = 4, line = 1.3, las = 0, cex = 1.2, adj = 0.35)
+mtext('Light', side = 4, line = 1.3, las = 0, cex = 1.2, adj = 0.3)
 
 # disturbance
 plot_comb_dens(dat, 'max_interstorm', 'Max Interstorm', log = TRUE)
 plot_comb_dens(dat, 'Disch_cv', 'Discharge CV')
 plot_comb_dens(dat, 'RBI', 'Flashiness (RBI)') 
-mtext('Disturbance', side = 4, line = 1.3, las = 0, cex = 1.2, adj = 0.8)
+mtext('Disturbance', side = 4, line = 1.3, las = 0, cex = 1.2, adj = 1)
 
 # connectivity
 plot_comb_dens(dat, 'MOD_ann_NPP', 'Terrestrial NPP')
 plot_comb_dens(dat, 'PrecipWs', 'Precipitation')
 plot_comb_dens(dat, 'width_to_area', 'Width:Area', log = TRUE)
-mtext('Connectivity', side = 4, line = 1.3, las = 0, cex = 1.2, adj = 0.8)
+mtext('Connectivity', side = 4, line = 1.3, las = 0, cex = 1.2, adj = 1)
 
 
 # other
 plot_comb_dens(dat, 'ElevWs', 'Elevation', log = TRUE)
 plot_comb_dens(dat, 'TmeanWs', 'Air Temperature')
-plot_comb_dens(dat, 'Disch_amp', 'Discharge Amplitude')
+plot_comb_dens(dat, 'Disch_amp', 'Discharge Range')
 mtext('Other', side = 4, line = 1.3, las = 0, cex = 1.2, adj = 0.35)
 
 par(mfrow = c(1,1), new = T)
@@ -206,7 +206,7 @@ plot_comb_dens(dat, 'RBI')
 plot_comb_dens(dat, 'MOD_ann_NPP')
 plot_comb_dens(dat, 'PrecipWs')
 plot_comb_dens(dat, 'width_to_area', log = TRUE)
-# plot_comb_dens(dat, 'drainage_density_connected')
+plot_comb_dens(dat, 'drainage_density_connected', 'Connected drainage density')
 
 # other
 plot_comb_dens(dat, 'ElevWs', log = TRUE)
