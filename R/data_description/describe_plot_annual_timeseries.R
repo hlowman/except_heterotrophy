@@ -61,7 +61,7 @@ dev.off()
 # How many site-years are autotrophic at an annual scale?
 ann_aut_sites <- ann %>% 
   mutate(siteyear = paste(site_name, year, sep = '_')) %>%
-  filter(ann_NEP_C > 0) # 87, so ~9% of 921 site-years total
+  filter(PR > 1) # 87, so ~9% of 921 site-years total
 
 # How many UNIQUE sites?
 length(unique(ann_aut_sites$site_name))
@@ -73,27 +73,27 @@ ann_aut_sites_summ <- ann %>%
   # filter down to the 37 sites of choice
   filter(site_name %in% unique(ann_aut_sites$site_name)) %>%
   group_by(site_name, lat, lon) %>%
-  summarize(med_NEP = median(ann_NEP_C),
-            max_NEP = max(ann_NEP_C)) %>%
+  summarize(med_PR = median(PR),
+            max_PR = max(PR)) %>%
   ungroup()
 
 # Percentiles of autotrophy
-quantile(ann_aut_sites_summ$med_NEP, c(0.10, 0.90))
-# 10th = -112.04
-# 90th = 201.32
+quantile(ann_aut_sites_summ$med_PR, c(0.10, 0.90))
+# 10th = 0.84
+# 90th = 1.35
 
-quantile(ann_aut_sites_summ$max_NEP, c(0.10, 0.90))
-# 10th = 13.45
-# 90th = 273.27
+quantile(ann_aut_sites_summ$max_PR, c(0.10, 0.90))
+# 10th = 1.04
+# 90th = 1.48
 
 # How many sites are autotrophic?
 aut_sites <- ann %>% 
   select(site_name, ER = ann_ER_C, GPP = ann_GPP_C, PR, NEP = ann_NEP_C) %>%
   group_by(site_name) %>%
   # Using Alice C's workflow to calculate median PR/NEP across all site-years
-  summarize(across(everything(), median, na.rm = T)) %>%
+  summarize(across(ER:NEP, median, na.rm = T)) %>%
   ungroup() %>%
-  filter(NEP > 0) # 15, so ~6% of 236 sites total
+  filter(PR > 1) # 15, so ~6% of 236 sites total
 
 # make a table of sites that are at least occasionally autotrophic
 aut_sites2 <- ann %>% 
@@ -104,13 +104,14 @@ aut_sites2 <- ann %>%
   # Using Alice C's workflow to calculate median PR/NEP across all site-years
   summarize(NEP_max = max(NEP, na.rm = T),
             PR_max = max(PR, na.rm = T),
-            across(everything(), median, na.rm = T)) %>%
+            across(ER:NEP, median, na.rm = T)) %>%
   ungroup() %>%
-  arrange(desc(NEP)) %>%
+  arrange(desc(PR)) %>%
   left_join(select(sites, site_name, long_name)) %>%
-  filter(NEP_max > 0) # 15, so ~6% of 236 sites total
+  filter(PR_max > 1) # 15, so ~6% of 236 sites total
 
 write_csv(aut_sites2, 'data_working/autotrophic_sites.csv')
+
 # Print site names
 site_names <- sites %>%
   select(site_name, long_name)
@@ -165,11 +166,11 @@ sd(aut_sites_allyrs$ann_NEP_C) # 202
 # How many site-years are heterotrophic?
 ann_het_sites <- ann %>% 
   mutate(siteyear = paste(site_name, year, sep = '_')) %>%
-  filter(ann_NEP_C <= 0 ) # 834
+  filter(PR <= 1 ) # 834
 
 # How many UNIQUE sites?
 length(unique(ann_het_sites$site_name))
-# 228 sites are heterotrophic at the annual scale
+# 228 sites are heterotrophic at the annual scale (including occasionally het. sites)
 
 # How many sites are heterotrophic?
 het_sites <- ann %>% 
@@ -178,7 +179,7 @@ het_sites <- ann %>%
   # Using Alice C's workflow to calculate median PR/NEP across all site-years
   summarize(across(everything(), median, na.rm = T)) %>%
   ungroup() %>%
-  filter(NEP <= 0) # 221, so ~94% of 236 sites total
+  filter(PR <= 1) # 221, so ~94% of 236 sites total
 
 # Print site names
 het_sites <- left_join(het_sites, site_names)
