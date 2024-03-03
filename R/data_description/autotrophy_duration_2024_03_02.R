@@ -8,7 +8,7 @@
 
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
-         "tidyverse"), require, character.only=T)
+         "tidyverse","data.table"), require, character.only=T)
 
 ## import most up-to-date dataset
 dat <- readRDS("../../data_356rivers/high_quality_daily_metabolism_with_SP_covariates.rds")
@@ -107,7 +107,7 @@ ggplot(auto_df, aes(PR_mean))+
 saveRDS(auto_df, "../../data_356rivers/autotrophic_event_duration_PR.rds")
 
 #############################################
-## Calculations for results
+## Calculations and figures for results
 #############################################
 auto_df <- readRDS("../../data_356rivers/autotrophic_event_duration_PR.rds")
 
@@ -135,6 +135,18 @@ auto_df$duration_length <- revalue(auto_df$duration_cat, c("1" = "1 day to 3 day
                                               "3" = "1 week to 2 weeks",
                                               "4" = "2 weeks to 1 month",
                                               "5" = "1 month to 3 months"))
+
+## visualize
+ggplot(auto_df, aes(duration_length))+
+  geom_bar(alpha=0.4, color="black", position="identity")+
+  theme_bw()+
+  theme(panel.grid.major.y = element_line(color="gray85"),
+        axis.title = element_text(size=14),
+        axis.text.x = element_text(size=14, angle=35, hjust = 1),
+        axis.text.y = element_text(size=14),
+        legend.position = "top")+
+  labs(x="Event duration", y="Number of events")
+
 #group by site and year and calculate mean duration_length category per year per site
 length_site_year <- auto_df %>%
   group_by(site_name, year_start,duration_length) %>%
@@ -166,6 +178,8 @@ mean_sd_length_year <- combined %>%
 # 1 to 3 days = 9.8 +/- 8.4 events/year
 # 1 to 3 months = 0.04 +/- 0.21 events/year
 
+
+
 ## 4 ## Month of onset and termination
 auto_df$onset_month <- month(auto_df$start_date)
 auto_df$end_month <- month(auto_df$end_date)
@@ -174,14 +188,14 @@ auto_df$end_month <- month(auto_df$end_date)
 ggplot(auto_df, aes(as.factor(onset_month)))+
   geom_bar(fill="#010D26", alpha=0.4, color="black")+
   geom_bar(aes(end_month), fill="#4CBFBB", alpha=0.5, color="black")+
-  labs(x="Month", y="Number of Events")+
+  labs(x="Month", y="Number of Events",title = "Onset Month = grey, End Month = teal")+
   facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
   theme_bw()+
   theme(panel.grid.major.y = element_line(color="gray85"),
+        title = element_text(size=8),
         axis.title = element_text(size=12),
         axis.text.x = element_text(size=12),
         axis.text.y = element_text(size=12),
-        legend.position = "none",
         strip.background = element_rect(fill="white", color = "black"))
 
 ## 5 ## Magnitude of Mean P:R during events
@@ -194,51 +208,5 @@ ggplot(auto_df, aes(event_dur, PR_mean, group = event_dur))+
   labs(x = "Event Duration (days)", y = "Mean P:R")
 
 
-############################
-## Mean duration per site
-###########################
-
-auto_mean <- auto_df %>%
-  group_by(SiteID, NEP_thresh) %>%
-  summarize_at(.vars = "event_dur", .funs = mean)
-
-auto_1 <- auto_mean[which(auto_mean$NEP_thresh == "1"),]
-
-ggplot(auto_1, aes(event_dur))+
-  geom_histogram()
-
-## load more packages
-lapply(c("plyr","dplyr","ggplot2","cowplot",
-         "lubridate","tidyverse", "reshape2",
-         "plotrix", "data.table","ggmap","maps","mapdata",
-         "ggsn","wesanderson"), require, character.only=T)
-
-## merge with site_info
-# data available here: https://www.sciencebase.gov/catalog/item/59bff64be4b091459a5e098b
-# But file is small enough and has been added to "data_356rivers" folder
-site_info <- read.table("data_356rivers/site_data.tsv",sep = "\t", header=T)
-auto_1$site_name <- auto_1$SiteID
-auto_1 <- merge(auto_1, site_info, by="site_name")
-
-(fig3 <- ggmap(get_stamenmap(bbox=c(-125, 25, -66, 50), zoom = 5, 
-                    maptype='toner'))+
-  geom_point(data = auto_1, aes(x = lon, y = lat, 
-                                 fill=event_dur, size=event_dur),
-             shape=21)+
-  theme(legend.position = "right")+
-  labs(x="Longitude", y="Latitude")+
-  scale_fill_gradient("Mean Autotrophic Event (days)",
-                      low = "blue", high = "red",
-                      breaks=c(1, 7, 14),
-                      labels=c("1 day", "1 week", "2 weeks"))+
-  scale_size_continuous("Mean Event Duration",
-                        breaks = c(1,7,14),
-                        labels=c("1 day", "1 week", "2 weeks")))
-
-# ggsave(("figures/auto_events_USmap.png"),
-#        width = 25,
-#        height = 15,
-#        units = "cm"
-# )
 
 # End of script.
