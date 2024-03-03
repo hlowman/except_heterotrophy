@@ -101,13 +101,6 @@ ggplot(auto_df, aes(PR_mean))+
   geom_histogram(binwidth = 1)+
   scale_x_continuous(trans = "log")+
   theme_bw()
-# Mean P:R by event duration
-ggplot(auto_df, aes(event_dur, PR_mean, group = event_dur))+
-  geom_boxplot()+
-  scale_y_continuous(trans = "log", breaks = c(1,3,10,30,100,1000,5000))+
-  geom_hline(yintercept = 1)+
-  theme_bw(base_size = 14)+
-  labs(x = "Event Duration (days)", y = "Mean P:R")
 
 
 ## save
@@ -157,8 +150,8 @@ length_site_year$site_year <- paste(length_site_year$site_name,
 events <- NULL
 events <- as.data.frame(rep(levels(as.factor(length_site_year$site_year)),2))
 colnames(events) <- "site_year"
-events$duration_length <- c(rep(levels(as.factor(auto_df$duration_length))[1], 1616/2),
-                                rep(levels(as.factor(auto_df$duration_length))[5], 1616/2))
+events$duration_length <- c(rep(levels(as.factor(auto_df$duration_length))[1], nrow(events)/2),
+                                rep(levels(as.factor(auto_df$duration_length))[5], nrow(events)/2))
 head(events); tail(events)
 #merge
 combined <- merge(events, length_site_year,
@@ -177,115 +170,29 @@ mean_sd_length_year <- combined %>%
 auto_df$onset_month <- month(auto_df$start_date)
 auto_df$end_month <- month(auto_df$end_date)
 
+#all
 ggplot(auto_df, aes(as.factor(onset_month)))+
-    geom_bar(alpha=0.4, color="black", position="identity")+
-    geom_bar(aes(as.factor(end_month)), alpha=0.4, color="blue", position="identity")+
-    facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
-    theme_bw()
-
-PC$start_hour <- hour(as.POSIXct(PC$start_date, format="%Y-%m-%d %H:%M:%S"))
-PC$end_hour <- hour(as.POSIXct(PC$end_date, format="%Y-%m-%d %H:%M:%S"))
-
-ggplot(PC_sub2[which(PC_sub2$quant_val %in% quant_val_sub_list),], aes(start_hour))+
   geom_bar(fill="#010D26", alpha=0.4, color="black")+
-  geom_bar(aes(end_hour), fill="#4CBFBB", alpha=0.5, color="black")+
-  labs(x="Hour of Day", y="Number of Events")+
-  facet_wrap(~quant_val, nrow=1)+
-  scale_x_continuous(breaks=c(0,4,8,12,16,20,24))+
-  theme(panel.grid.major.y = element_line(color="gray85"),
-        axis.title = element_text(size=12),
-        axis.text.x = element_text(size=12),
-        axis.text.y = element_text(size=12),
-        legend.position = "none",
-        strip.background = element_rect(fill="white"))
-time_of_day  
-
-## All for SI
-ggplot(PC_sub2, aes(start_hour))+
-  geom_bar(fill="#010D26", alpha=0.4, color="black")+
-  geom_bar(aes(end_hour), fill="#4CBFBB", alpha=0.5, color="black")+
-  labs(x="Hour of Day", y="Number of Events")+
-  facet_wrap(~quant_val, nrow=4)+
-  scale_x_continuous(breaks=c(0,4,8,12,16,20,24))+
-  theme(panel.grid.major.y = element_line(color="gray85"),
-        axis.title = element_text(size=12),
-        axis.text.x = element_text(size=12),
-        axis.text.y = element_text(size=12),
-        legend.position = "none",
-        strip.background = element_rect(fill="white"))
-
-
-
-
-
-
-## 5 ## Magnitude of P:R during events
-
-
-
-
-
-
-
-
-#############################################
-## Which sites have long periods of NEP > 0
-#############################################
-
-# Read in dataset created above
-auto_df <- readRDS("data_working/autotrophic_event_durations.rds")
-
-auto_df[which(auto_df$event_dur > 30),]
-
-## Group them
-quantiles<-c(1, 3, 7, 14, 30, 90)
-auto_df$quant <- factor(findInterval(auto_df$event_dur,quantiles))
-auto_df$quant_val <- revalue(auto_df$quant, c("1" = "1 day to 3 days",
-                                              "2" = "3 days to 1 week",
-                                    "3" = "1 week to 2 weeks",
-                                    "4" = "2 weeks to 1 month",
-                                    "5" = "1 month to 3 months"))
-
-## Plot
-levels(factor(auto_df$NEP_thresh))
-auto_df$NEP_thresh_name <- factor(auto_df$NEP_thresh, 
-                                  levels = c("0" = "NEP > 0",
-                                             "0.5" = "NEP > 0.5",
-                                             "1" = "NEP > 1",
-                                             "5" = "NEP > 5"))
-
-(fig1 <- ggplot(auto_df, aes(quant_val, fill=as.factor(NEP_thresh)))+
-  geom_bar(alpha=0.4, color="black", position="identity")+
+  geom_bar(aes(end_month), fill="#4CBFBB", alpha=0.5, color="black")+
+  labs(x="Month", y="Number of Events")+
+  facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
   theme_bw()+
   theme(panel.grid.major.y = element_line(color="gray85"),
-        axis.title = element_text(size=14),
-        axis.text.x = element_text(size=14, angle=35, hjust = 1),
-        axis.text.y = element_text(size=14),
-        legend.position = "top")+
-  labs(x="Event duration", y="Number of events"))
+        axis.title = element_text(size=12),
+        axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12),
+        legend.position = "none",
+        strip.background = element_rect(fill="white", color = "black"))
 
-# ggsave(("figures/auto_events_duration.png"),
-#        width = 25,
-#        height = 15,
-#        units = "cm"
-# )
+## 5 ## Magnitude of Mean P:R during events
 
-#############################
-## What month is the onset?
-#############################
+ggplot(auto_df, aes(event_dur, PR_mean, group = event_dur))+
+  geom_boxplot()+
+  scale_y_continuous(trans = "log", breaks = c(1,3,10,30,100,1000,5000))+
+  geom_hline(yintercept = 1)+
+  theme_bw(base_size = 14)+
+  labs(x = "Event Duration (days)", y = "Mean P:R")
 
-auto_df$month <- month(auto_df$start_date)
-
-(fig2 <- ggplot(auto_df, aes(as.factor(month)))+
-  geom_bar(alpha=0.4, color="black", position="identity")+
-  facet_wrap(~as.factor(quant_val), ncol=1, scales = "free_y")+
-  theme_bw())
-
-# ggsave(("figures/auto_events_onset.png"),
-#        width = 25,
-#        height = 15,
-#        units = "cm"
-# )
 
 ############################
 ## Mean duration per site
