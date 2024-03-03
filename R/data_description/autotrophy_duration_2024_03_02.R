@@ -92,8 +92,23 @@ head(auto_df);tail(auto_df)
 ## Visualize
 ggplot(auto_df, aes(event_dur, fill=PR_thresh))+
   geom_histogram(binwidth = 1)+
-  facet_wrap(~PR_thresh,ncol=1)+
   theme_bw()
+
+#check PR_mean
+auto_df[which(auto_df$PR_mean > 50),] ## crazy high PR values? what do we do
+#histogram
+ggplot(auto_df, aes(PR_mean))+
+  geom_histogram(binwidth = 1)+
+  scale_x_continuous(trans = "log")+
+  theme_bw()
+# Mean P:R by event duration
+ggplot(auto_df, aes(event_dur, PR_mean, group = event_dur))+
+  geom_boxplot()+
+  scale_y_continuous(trans = "log", breaks = c(1,3,10,30,100,1000,5000))+
+  geom_hline(yintercept = 1)+
+  theme_bw(base_size = 14)+
+  labs(x = "Event Duration (days)", y = "Mean P:R")
+
 
 ## save
 saveRDS(auto_df, "../../data_356rivers/autotrophic_event_duration_PR.rds")
