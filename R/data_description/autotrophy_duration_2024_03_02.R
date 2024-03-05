@@ -25,6 +25,7 @@ duration_calc <- function(df_site){
 
   d <- df_site[,c("site_name","date","GPP","ER")]
   d$PR <- d$GPP/abs(d$ER)
+  d$NEP <- d$GPP - abs(d$ER)
 
   # First calc time difference and split to segments to avoid NA days
   d$diff_time <- NA
@@ -60,7 +61,8 @@ duration_calc <- function(df_site){
       summarise(event_duration = difftime(last(date), first(date), units = "days"),
                 start_date = first(date),
                 end_date = last(date),
-                PR_mean = mean(PR))
+                PR_mean = mean(PR),
+                NEP_mean = mean(NEP))
     
     zz[nrow(zz)+1,] <- NA
     
@@ -70,7 +72,7 @@ duration_calc <- function(df_site){
   event_above1 <- ldply(lapply(lseq, function(x) events_calc(x, 1)), data.frame);event_above1$PR_thresh <- 1
   
     ## subset
-  events_df <- event_above1[,c("event_duration","start_date","end_date","PR_mean","PR_thresh")]
+  events_df <- event_above1[,c("event_duration","start_date","end_date","PR_mean","NEP_mean")]
   events_df$site_name <- d$site_name[1]
   events_df <- na.omit(events_df)
   
@@ -95,7 +97,7 @@ ggplot(auto_df, aes(event_dur, fill=PR_thresh))+
   theme_bw()
 
 #check PR_mean
-auto_df[which(auto_df$PR_mean > 50),] ## crazy high PR values? what do we do
+auto_df[which(auto_df$PR_mean > 50),] ## crazy high PR values - maybe use NEP instead
 #histogram
 ggplot(auto_df, aes(PR_mean))+
   geom_histogram(binwidth = 1)+
@@ -104,12 +106,12 @@ ggplot(auto_df, aes(PR_mean))+
 
 
 ## save
-saveRDS(auto_df, "../../data_356rivers/autotrophic_event_duration_PR.rds")
+saveRDS(auto_df, "../../data_356rivers/autotrophic_event_duration_means.rds")
 
 #############################################
 ## Calculations and figures for results
 #############################################
-auto_df <- readRDS("../../data_356rivers/autotrophic_event_duration_PR.rds")
+auto_df <- readRDS("../../data_356rivers/autotrophic_event_duration_means.rds")
 
 ## 1 ## What % of rivers experienced at least one autotrophic event
 length(levels(as.factor(auto_df$site_name))) # 212 sites
@@ -207,6 +209,9 @@ ggplot(auto_df, aes(event_dur, PR_mean, group = event_dur))+
   theme_bw(base_size = 14)+
   labs(x = "Event Duration (days)", y = "Mean P:R")
 
-
+ggplot(auto_df, aes(event_dur, NEP_mean, group = event_dur))+
+  geom_boxplot()+
+  theme_bw(base_size = 14)+
+  labs(x = "Event Duration (days)", y = expression('Mean NEP (g '*~O[2]~ m^-2~d^-1*')'))
 
 # End of script.
