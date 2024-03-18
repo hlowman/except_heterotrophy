@@ -22,32 +22,20 @@ dams <- dat %>% select(site_name, width_to_area, drainage_density_connected,
 summary(dams)
 
 
-dd <- select(dams, -drainage_density)
+dd <- select(dams, -drainage_density, -connectivity_ratio)
 d <- cor(dd, use = 'complete.obs')
 d1 <- cor.mtest(dd, conf.level = 0.95)
 
 pal1<-colorRampPalette(c('coral2', 'white', 'steelblue'))
 
-png('figures/covariate_correlations.png', width = 4, height = 4,
+png('figures/dam_covariate_correlations.png', width = 4, height = 4,
     res = 300, units = 'in')
 par(oma = c(.5,0,0,0))
-corrplot(d, type = "lower", order = "original", p.mat = d1$p,
+corrplot(d, type = "lower", order = "AOE", addCoef.col = "black", 
          tl.col = "black", tl.srt = 90, tl.cex = .7,
          method='color', diag=FALSE, cl.cex = .6,
          cl.length = 11, col=pal1(20),
-         sig.level = c(0.01, 0.05, 0.1), insig = 'label_sig',
          pch.cex = 1, pch.col='grey20')
-corrplot(d, type = "lower", order = "AOE", addCoef.col = "black", 
-         tl.srt = 90, tl.cex = .7,
-         method='color', diag=FALSE, cl.cex = .6,
-         cl.length = 11, col=pal1(20),
-         pch.cex = 1, pch.col='grey20')
-
-corrplot(M, order = 'AOE', addCoef.col = 'black', tl.pos = 'd',
-         cl.pos = 'n', col = COL2('PiYG'))
-
-
-mtext('Correlation Coefficient', 1, 4.5, cex = .7, adj = .57)
 
 dev.off()
 
