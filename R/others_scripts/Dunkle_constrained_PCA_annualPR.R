@@ -13,9 +13,11 @@ library(ggrepel);
 library(here)
 
 
-across_sites_model_data <- read.csv(here::here("data_working/across_sites_model_data.csv"), header=TRUE, fileEncoding = "UTF-8-BOM")
+across_sites_model_data <- read.csv(here::here("data_working/across_sites_model_data.csv"), 
+                                    header=TRUE, fileEncoding = "UTF-8-BOM")
 
-literature_data <- read.csv(here::here("data_working/literature_streams_data_for_PCA.csv"), header=TRUE, fileEncoding = "UTF-8-BOM")
+literature_data <- read.csv(here::here("data_working/literature_streams_data_for_PCA.csv"), 
+                            header=TRUE, fileEncoding = "UTF-8-BOM")
 
 literature_data2 <- literature_data %>%  mutate(Class = "Literature")
 
@@ -39,18 +41,26 @@ autotrophic = across_sites_model_data %>%
 
 
 
-autotrophic_data = autotrophic %>% select( Disch_cv, max_interstorm, RBI, width_to_area, PrecipWs, MOD_ann_NPP, drainage_density_connected, PAR_kurt, ElevWs, Width,Stream_PAR_sum)
+autotrophic_data = autotrophic %>% 
+  select( Disch_cv, max_interstorm, RBI, width_to_area, PrecipWs, MOD_ann_NPP, 
+          drainage_density_connected, PAR_kurt, ElevWs, Width,Stream_PAR_sum)
 
-autotrophic_data2 = autotrophic %>% select( site_name, year, Disch_cv, max_interstorm, RBI, width_to_area, PrecipWs, MOD_ann_NPP, drainage_density_connected, PAR_kurt, ElevWs, Width,Stream_PAR_sum)
+autotrophic_data2 = autotrophic %>% 
+  select( site_name, year, Disch_cv, max_interstorm, RBI, width_to_area, 
+          PrecipWs, MOD_ann_NPP, drainage_density_connected, PAR_kurt, ElevWs,
+          Width,Stream_PAR_sum)
 
 
 litauto<-dplyr::bind_rows(autotrophic, literature_data2)
 
 ## additional dataframes #
 
-autotrophic_QR = autotrophic %>% select( site_name, year, Stream_PAR_sum, max_interstorm, Disch_cv, RBI, width_to_area, PrecipWs, MOD_ann_NPP, drainage_density_connected)
+autotrophic_QR = autotrophic %>% 
+  select( site_name, Stream_PAR_sum, max_interstorm, Disch_cv, RBI,
+          width_to_area, PrecipWs, MOD_ann_NPP, drainage_density_connected)
 
-autotrophic_sparse = autotrophic %>% select( site_name, year, max_interstorm, MOD_ann_NPP, PAR_kurt, ElevWs, Width)
+autotrophic_sparse = autotrophic %>% 
+  select( site_name, year, max_interstorm, MOD_ann_NPP, PAR_kurt, ElevWs, Width)
 
 
 #auto_hellinger = disttransform(autotrophic_data, method = "log")
