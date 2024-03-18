@@ -67,7 +67,6 @@ nrow(HQdays[(HQdays$GPP.upper > 0) & (HQdays$GPP_raw < 0),])/
 nrow(HQdays[(HQdays$ER.lower < 0) & (HQdays$ER_raw > 0),])/
   sum(!is.na(HQdays$ER_raw))  # 3.6% of days 
 
-
 # Data from Bernhardt et al 2022: ####
 # Note, to get the lotic_standardized_full dataset 
 # https://figshare.com/articles/software/Code_and_RDS_data_for_Bernhardt_et_al_2022_PNAS_/19074140?backTo=/collections/Data_and_code_for_Bernhardt_et_al_2022_PNAS_/5812160
@@ -89,7 +88,8 @@ sp_sub <- left_join(sp, sp_filled, by = c('Site_ID', 'Date'))  %>%
 
 # subset columns:
 pw_hq <- HQdays %>%
-  select(-resolution, -ends_with('n_eff'), -day.length, -shortwave) %>%
+  select(-resolution, -ends_with('n_eff'), 
+         -day.length, -shortwave) %>%
   mutate(date = as.Date(date))
 
 # Powell center estimates complete with bernhardt covatiates
@@ -99,7 +99,7 @@ sp_pw <- full_join(pw_hq, sp_sub, by = c('site_name', 'date')) %>%
          year = lubridate::year(date)) %>%
   select(-K600_sp)
 
-sp_pw <- pw_site_dat %>% select(site_name, long_name, Dam_binary) %>%
+sp_pw <- pw_site_dat %>% select(site_name, long_name) %>%
   right_join(sp_pw, by = 'site_name') %>%
   rename(PAR = PAR_sum, Stream_PAR = Stream_PAR_sum, LAI = LAI_proc)
   
@@ -127,6 +127,19 @@ sp_pw_sub <- sp_pw_sub %>%
          across(any_of(c('K600.lower', 'K600.upper')),
                 function(x) {x = case_when(is.na(K600) ~ NA_real_,
                                            TRUE ~ x); x}))
+
+# remove sites with all NAs after data filter:
+NA_site_years <- tibble(sp_pw_sub) %>% 
+  mutate(siteyear = paste(site_name, year, sep = '_')) %>%
+  group_by(siteyear) %>%
+  summarize(GPP = mean(GPP, na.rm = T), 
+            ER = mean(ER, na.rm = T)) %>%
+  filter(is.na(GPP) | is.na(ER))
+
+sp_pw_sub <- sp_pw_sub %>% 
+  mutate(siteyear = paste(site_name, year, sep = '_')) %>%
+  filter(!siteyear %in% NA_site_years$siteyear) %>%
+  select(-siteyear, -Year)
 
 
 # Save joined database
