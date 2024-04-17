@@ -97,12 +97,12 @@ ggplot(auto_df, aes(event_dur, fill=PR_thresh))+
   theme_bw()
 
 ## save
-saveRDS(auto_df, "autotrophic_event_duration_PR.rds")
+saveRDS(auto_df, "../../data_working/autotrophic_event_duration_PR.rds")
 
 #############################################
 ## Calculations for results
 #############################################
-auto_df <- readRDS("autotrophic_event_duration_PR.rds")
+auto_df <- readRDS("../../data_working/autotrophic_event_duration_PR.rds")
 
 ## 1 ## What % of rivers experienced at least one autotrophic event
 length(levels(as.factor(auto_df$site_name))) # 212 sites
