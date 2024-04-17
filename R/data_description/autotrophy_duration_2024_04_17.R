@@ -1,9 +1,10 @@
 ##==============================================================================
 ## Script for autotrophy duration 
 ## Code author: J.R. Blaszczak
-## Last Edited: March 1, 2024
+## Last Edited: April 17, 2024
 ##
-## Changed NEP to P:R as the metric by which we are quanitfying autotrophy
+## Changed NEP to P:R as the metric by which we are quantifying autotrophy
+## Added NEP Figure back in
 ##==============================================================================
 
 ## Load packages
@@ -115,8 +116,9 @@ auto_df <- readRDS("../../data_356rivers/autotrophic_event_duration_means.rds")
 
 ## 1 ## What % of rivers experienced at least one autotrophic event
 length(levels(as.factor(auto_df$site_name))) # 212 sites
+length(levels(as.factor(auto_df[which(auto_df$event_dur > 7),]$site_name))) ##147
 length(levels(as.factor(df$site_name))) # 223 sites
-212/223 #95%
+147/223 #66% have an event longer than one week
 
 ## 2 ## what percentage of days are autotrophic
 sum(auto_df$event_dur) #46,042

@@ -1,14 +1,15 @@
 ##==============================================================================
 ## Script for autotrophy duration 
 ## Code author: J.R. Blaszczak
-## Last Edited: March 1, 2024
+## Last Edited: April 17, 2024
 ##
 ## Changed NEP to P:R as the metric by which we are quantifying autotrophy
+## Added NEP Figure back in
 ##==============================================================================
 
 ## Load packages
 lapply(c("plyr","dplyr","ggplot2","cowplot","lubridate",
-         "tidyverse"), require, character.only=T)
+         "tidyverse","data.table"), require, character.only=T)
 
 ## import most up-to-date dataset
 dat <- readRDS("../../data_356rivers/high_quality_daily_metabolism_with_SP_covariates.rds")
@@ -23,10 +24,9 @@ df_list <- split(df, df$site_name)
 #############################################
 duration_calc <- function(df_site){
 
-#df_site <- df_list$nwis_01184000
-  
   d <- df_site[,c("site_name","date","GPP","ER")]
   d$PR <- d$GPP/abs(d$ER)
+  d$NEP <- d$GPP - abs(d$ER)
 
   # First calc time difference and split to segments to avoid NA days
   d$diff_time <- NA
@@ -57,11 +57,13 @@ duration_calc <- function(df_site){
       mutate(PR_above = PR > t, id = data.table::rleid(PR_above)) %>% 
       # keep only periods with autotrophy
       filter(PR_above) %>%
-      # for each period/event, get its duration
+      # for each period/event, get its duration & magnitude
       group_by(id) %>%
       summarise(event_duration = difftime(last(date), first(date), units = "days"),
                 start_date = first(date),
-                end_date = last(date))
+                end_date = last(date),
+                PR_mean = mean(PR),
+                NEP_mean = mean(NEP))
     
     zz[nrow(zz)+1,] <- NA
     
@@ -71,7 +73,7 @@ duration_calc <- function(df_site){
   event_above1 <- ldply(lapply(lseq, function(x) events_calc(x, 1)), data.frame);event_above1$PR_thresh <- 1
   
     ## subset
-  events_df <- event_above1[,c("event_duration","start_date","end_date","PR_thresh")]
+  events_df <- event_above1[,c("event_duration","start_date","end_date","PR_mean","NEP_mean")]
   events_df$site_name <- d$site_name[1]
   events_df <- na.omit(events_df)
   
@@ -93,16 +95,24 @@ head(auto_df);tail(auto_df)
 ## Visualize
 ggplot(auto_df, aes(event_dur, fill=PR_thresh))+
   geom_histogram(binwidth = 1)+
-  facet_wrap(~PR_thresh,ncol=1)+
   theme_bw()
 
+#check PR_mean
+auto_df[which(auto_df$PR_mean > 50),] ## crazy high PR values - maybe use NEP instead
+#histogram
+ggplot(auto_df, aes(PR_mean))+
+  geom_histogram(binwidth = 1)+
+  scale_x_continuous(trans = "log")+
+  theme_bw()
+
+
 ## save
-saveRDS(auto_df, "../../data_working/autotrophic_event_duration_PR.rds")
+saveRDS(auto_df, "../../data_356rivers/autotrophic_event_duration_means.rds")
 
 #############################################
-## Calculations for results
+## Calculations and figures for results
 #############################################
-auto_df <- readRDS("../../data_working/autotrophic_event_duration_PR.rds")
+auto_df <- readRDS("../../data_356rivers/autotrophic_event_duration_means.rds")
 
 ## 1 ## What % of rivers experienced at least one autotrophic event
 length(levels(as.factor(auto_df$site_name))) # 212 sites
@@ -128,6 +138,18 @@ auto_df$duration_length <- revalue(auto_df$duration_cat, c("1" = "1 day to 3 day
                                               "3" = "1 week to 2 weeks",
                                               "4" = "2 weeks to 1 month",
                                               "5" = "1 month to 3 months"))
+
+## visualize
+ggplot(auto_df, aes(duration_length))+
+  geom_bar(alpha=0.4, color="black", position="identity")+
+  theme_bw()+
+  theme(panel.grid.major.y = element_line(color="gray85"),
+        axis.title = element_text(size=14),
+        axis.text.x = element_text(size=14, angle=35, hjust = 1),
+        axis.text.y = element_text(size=14),
+        legend.position = "top")+
+  labs(x="Event duration", y="Number of events")
+
 #group by site and year and calculate mean duration_length category per year per site
 length_site_year <- auto_df %>%
   group_by(site_name, year_start,duration_length) %>%
@@ -143,8 +165,8 @@ length_site_year$site_year <- paste(length_site_year$site_name,
 events <- NULL
 events <- as.data.frame(rep(levels(as.factor(length_site_year$site_year)),2))
 colnames(events) <- "site_year"
-events$duration_length <- c(rep(levels(as.factor(auto_df$duration_length))[1], 1616/2),
-                                rep(levels(as.factor(auto_df$duration_length))[5], 1616/2))
+events$duration_length <- c(rep(levels(as.factor(auto_df$duration_length))[1], nrow(events)/2),
+                                rep(levels(as.factor(auto_df$duration_length))[5], nrow(events)/2))
 head(events); tail(events)
 #merge
 combined <- merge(events, length_site_year,
@@ -159,129 +181,38 @@ mean_sd_length_year <- combined %>%
 # 1 to 3 days = 9.8 +/- 8.4 events/year
 # 1 to 3 months = 0.04 +/- 0.21 events/year
 
+
+
 ## 4 ## Month of onset and termination
 auto_df$onset_month <- month(auto_df$start_date)
 auto_df$end_month <- month(auto_df$end_date)
 
+#all
 ggplot(auto_df, aes(as.factor(onset_month)))+
-    geom_bar(alpha=0.4, color="black", position="identity")+
-    geom_bar(aes(as.factor(end_month)), alpha=0.4, color="blue", position="identity")+
-    facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
-    theme_bw()
-
-## 5 ## Magnitude of P:R during events
-
-
-
-
-
-
-
-
-#############################################
-## Which sites have long periods of NEP > 0
-#############################################
-
-# Read in dataset created above
-auto_df <- readRDS("data_working/autotrophic_event_durations.rds")
-
-auto_df[which(auto_df$event_dur > 30),]
-
-## Group them
-quantiles<-c(1, 3, 7, 14, 30, 90)
-auto_df$quant <- factor(findInterval(auto_df$event_dur,quantiles))
-auto_df$quant_val <- revalue(auto_df$quant, c("1" = "1 day to 3 days",
-                                              "2" = "3 days to 1 week",
-                                    "3" = "1 week to 2 weeks",
-                                    "4" = "2 weeks to 1 month",
-                                    "5" = "1 month to 3 months"))
-
-## Plot
-levels(factor(auto_df$NEP_thresh))
-auto_df$NEP_thresh_name <- factor(auto_df$NEP_thresh, 
-                                  levels = c("0" = "NEP > 0",
-                                             "0.5" = "NEP > 0.5",
-                                             "1" = "NEP > 1",
-                                             "5" = "NEP > 5"))
-
-(fig1 <- ggplot(auto_df, aes(quant_val, fill=as.factor(NEP_thresh)))+
-  geom_bar(alpha=0.4, color="black", position="identity")+
+  geom_bar(fill="#010D26", alpha=0.4, color="black")+
+  geom_bar(aes(end_month), fill="#4CBFBB", alpha=0.5, color="black")+
+  labs(x="Month", y="Number of Events",title = "Onset Month = grey, End Month = teal")+
+  facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
   theme_bw()+
   theme(panel.grid.major.y = element_line(color="gray85"),
-        axis.title = element_text(size=14),
-        axis.text.x = element_text(size=14, angle=35, hjust = 1),
-        axis.text.y = element_text(size=14),
-        legend.position = "top")+
-  labs(x="Event duration", y="Number of events"))
+        title = element_text(size=8),
+        axis.title = element_text(size=12),
+        axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12),
+        strip.background = element_rect(fill="white", color = "black"))
 
-# ggsave(("figures/auto_events_duration.png"),
-#        width = 25,
-#        height = 15,
-#        units = "cm"
-# )
+## 5 ## Magnitude of Mean P:R during events
 
-#############################
-## What month is the onset?
-#############################
+ggplot(auto_df, aes(event_dur, PR_mean, group = event_dur))+
+  geom_boxplot()+
+  scale_y_continuous(trans = "log", breaks = c(1,3,10,30,100,1000,5000))+
+  geom_hline(yintercept = 1)+
+  theme_bw(base_size = 14)+
+  labs(x = "Event Duration (days)", y = "Mean P:R")
 
-auto_df$month <- month(auto_df$start_date)
-
-(fig2 <- ggplot(auto_df, aes(as.factor(month)))+
-  geom_bar(alpha=0.4, color="black", position="identity")+
-  facet_wrap(~as.factor(quant_val), ncol=1, scales = "free_y")+
-  theme_bw())
-
-# ggsave(("figures/auto_events_onset.png"),
-#        width = 25,
-#        height = 15,
-#        units = "cm"
-# )
-
-############################
-## Mean duration per site
-###########################
-
-auto_mean <- auto_df %>%
-  group_by(SiteID, NEP_thresh) %>%
-  summarize_at(.vars = "event_dur", .funs = mean)
-
-auto_1 <- auto_mean[which(auto_mean$NEP_thresh == "1"),]
-
-ggplot(auto_1, aes(event_dur))+
-  geom_histogram()
-
-## load more packages
-lapply(c("plyr","dplyr","ggplot2","cowplot",
-         "lubridate","tidyverse", "reshape2",
-         "plotrix", "data.table","ggmap","maps","mapdata",
-         "ggsn","wesanderson"), require, character.only=T)
-
-## merge with site_info
-# data available here: https://www.sciencebase.gov/catalog/item/59bff64be4b091459a5e098b
-# But file is small enough and has been added to "data_356rivers" folder
-site_info <- read.table("data_356rivers/site_data.tsv",sep = "\t", header=T)
-auto_1$site_name <- auto_1$SiteID
-auto_1 <- merge(auto_1, site_info, by="site_name")
-
-(fig3 <- ggmap(get_stamenmap(bbox=c(-125, 25, -66, 50), zoom = 5, 
-                    maptype='toner'))+
-  geom_point(data = auto_1, aes(x = lon, y = lat, 
-                                 fill=event_dur, size=event_dur),
-             shape=21)+
-  theme(legend.position = "right")+
-  labs(x="Longitude", y="Latitude")+
-  scale_fill_gradient("Mean Autotrophic Event (days)",
-                      low = "blue", high = "red",
-                      breaks=c(1, 7, 14),
-                      labels=c("1 day", "1 week", "2 weeks"))+
-  scale_size_continuous("Mean Event Duration",
-                        breaks = c(1,7,14),
-                        labels=c("1 day", "1 week", "2 weeks")))
-
-# ggsave(("figures/auto_events_USmap.png"),
-#        width = 25,
-#        height = 15,
-#        units = "cm"
-# )
+ggplot(auto_df, aes(event_dur, NEP_mean, group = event_dur))+
+  geom_boxplot()+
+  theme_bw(base_size = 14)+
+  labs(x = "Event Duration (days)", y = expression('Mean NEP (g '*~O[2]~ m^-2~d^-1*')'))
 
 # End of script.
