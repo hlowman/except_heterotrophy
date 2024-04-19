@@ -93,16 +93,21 @@ auto_df$event_dur <- as.numeric(auto_df$event_duration)
 head(auto_df);tail(auto_df)
 
 ## Visualize
-ggplot(auto_df, aes(event_dur, fill=PR_thresh))+
+ggplot(auto_df, aes(event_dur, fill=PR_mean))+
   geom_histogram(binwidth = 1)+
   theme_bw()
 
 #check PR_mean
 auto_df[which(auto_df$PR_mean > 50),] ## crazy high PR values - maybe use NEP instead
-#histogram
+#histogram P:R
 ggplot(auto_df, aes(PR_mean))+
   geom_histogram(binwidth = 1)+
   scale_x_continuous(trans = "log")+
+  theme_bw()
+#histogram NEP
+ggplot(auto_df, aes(NEP_mean))+
+  geom_histogram(binwidth = 1)+
+  #scale_x_continuous(trans = "log")+
   theme_bw()
 
 
@@ -117,28 +122,38 @@ auto_df <- readRDS("../../data_356rivers/autotrophic_event_duration_means.rds")
 ## 1 ## What % of rivers experienced at least one autotrophic event
 length(levels(as.factor(auto_df$site_name))) # 212 sites
 length(levels(as.factor(auto_df[which(auto_df$event_dur > 7),]$site_name))) ##147
+length(levels(as.factor(auto_df[which(auto_df$event_dur > 14),]$site_name))) ##82
+length(levels(as.factor(auto_df[which(auto_df$event_dur > 21),]$site_name))) ##43
+length(levels(as.factor(auto_df[which(auto_df$event_dur > 28),]$site_name))) ##21
 length(levels(as.factor(df$site_name))) # 223 sites
-147/223 #66% have an event longer than one week
+147/223 #67% have an event longer than one week
+82/223 #37% have an event longer than two weeks
+43/223 #19% have an event longer than three weeks
+21/223 #9% have an event longer than one month
 
 ## 2 ## what percentage of days are autotrophic
 sum(auto_df$event_dur) #46,042
 sum(auto_df$event_dur)/nrow(df) #19%
 
+## what percentage of days are during events of longer than one week
+sum(auto_df[which(auto_df$event_dur > 7),]$event_dur) #18,815
+sum(auto_df[which(auto_df$event_dur > 7),]$event_dur)/nrow(df) #8%
+
 ## 3 ## Number of events per year
-# Compare mean +/- events per year between 1-3 days and 1-3 months
+# Compare mean +/- events per year between 3-7 days and 1-3 months
 #first compare if any events cross years
 auto_df$year_start <- year(auto_df$start_date)
 auto_df$year_end <- year(auto_df$end_date)
 auto_df$year_diff <- auto_df$year_end - auto_df$year_start
 nrow(auto_df[which(auto_df$year_diff > 0),]) ## only 18 sites; will attribute to start year
 #classify if an event is 1-3 days or 1-3 months
-duration_days<-c(1, 3, 7, 14, 30, 90)
+duration_days<-c(1, 4, 8, 15, 31, 91)
 auto_df$duration_cat <- factor(findInterval(auto_df$event_dur,duration_days))
 auto_df$duration_length <- revalue(auto_df$duration_cat, c("1" = "1 day to 3 days",
-                                              "2" = "3 days to 1 week",
-                                              "3" = "1 week to 2 weeks",
-                                              "4" = "2 weeks to 1 month",
-                                              "5" = "1 month to 3 months"))
+                                              "2" = "4 days to 1 week",
+                                              "3" = "1 week to 2 weeks", #8-14 days
+                                              "4" = "2 weeks to 1 month", #15-31 days
+                                              "5" = "1 month to 3 months")) #32-91 days
 
 ## visualize
 ggplot(auto_df, aes(duration_length))+
@@ -156,17 +171,17 @@ length_site_year <- auto_df %>%
   group_by(site_name, year_start,duration_length) %>%
   count()
 #expand this to include 0 for each length and site and year
-#only include 1-3 days and 1-3 months
+#only include 4-7 days and 1-3 months
 length(levels(as.factor(auto_df$site_name))) #212
 levels(as.factor(length_site_year$year_start)) #2008-2016
 # Create a site-year index
 length_site_year$site_year <- paste(length_site_year$site_name,
                                     length_site_year$year_start,sep="_")
-# For every site-year index, create a data frame with both 1-3 days and 1-3 months
+# For every site-year index, create a data frame with both 4-7 days and 1-3 months
 events <- NULL
 events <- as.data.frame(rep(levels(as.factor(length_site_year$site_year)),2))
 colnames(events) <- "site_year"
-events$duration_length <- c(rep(levels(as.factor(auto_df$duration_length))[1], nrow(events)/2),
+events$duration_length <- c(rep(levels(as.factor(auto_df$duration_length))[2], nrow(events)/2),
                                 rep(levels(as.factor(auto_df$duration_length))[5], nrow(events)/2))
 head(events); tail(events)
 #merge
@@ -179,7 +194,8 @@ combined[is.na(combined$n),]$n <- 0
 mean_sd_length_year <- combined %>%
   group_by(duration_length) %>%
   summarize(mean = mean(n), sd = sd(n))
-# 1 to 3 days = 9.8 +/- 8.4 events/year
+mean_sd_length_year
+# 4 to 7 days = 3.0 +/- 3.3 events/year
 # 1 to 3 months = 0.04 +/- 0.21 events/year
 
 
@@ -188,8 +204,8 @@ mean_sd_length_year <- combined %>%
 auto_df$onset_month <- month(auto_df$start_date)
 auto_df$end_month <- month(auto_df$end_date)
 
-#all
-ggplot(auto_df, aes(as.factor(onset_month)))+
+#all (4+ days)
+ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(as.factor(onset_month)))+
   geom_bar(fill="#010D26", alpha=0.4, color="black")+
   geom_bar(aes(end_month), fill="#4CBFBB", alpha=0.5, color="black")+
   labs(x="Month", y="Number of Events",title = "Onset Month = grey, End Month = teal")+
@@ -201,8 +217,20 @@ ggplot(auto_df, aes(as.factor(onset_month)))+
         axis.text.x = element_text(size=12),
         axis.text.y = element_text(size=12),
         strip.background = element_rect(fill="white", color = "black"))
+#Onset only
+ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(as.factor(onset_month)))+
+  geom_bar(fill="#4CBFBB", alpha=0.4, color="black")+
+  labs(x="Month", y="Number of Events",title = "Onset Month of Autotrophic Event")+
+  facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
+  theme_bw()+
+  theme(panel.grid.major.y = element_line(color="gray85"),
+        title = element_text(size=8),
+        axis.title = element_text(size=12),
+        axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12),
+        strip.background = element_rect(fill="white", color = "black"))
 
-## 5 ## Magnitude of Mean P:R during events
+## 5 ## Magnitude of Mean P:R & NEP during events
 
 ggplot(auto_df, aes(event_dur, PR_mean, group = event_dur))+
   geom_boxplot()+
@@ -211,9 +239,17 @@ ggplot(auto_df, aes(event_dur, PR_mean, group = event_dur))+
   theme_bw(base_size = 14)+
   labs(x = "Event Duration (days)", y = "Mean P:R")
 
-ggplot(auto_df, aes(event_dur, NEP_mean, group = event_dur))+
+ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(event_dur, NEP_mean, group = event_dur))+
   geom_boxplot()+
   theme_bw(base_size = 14)+
   labs(x = "Event Duration (days)", y = expression('Mean NEP (g '*~O[2]~ m^-2~d^-1*')'))
+
+
+
+
+
+
+
+
 
 # End of script.
