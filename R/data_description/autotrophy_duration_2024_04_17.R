@@ -1,7 +1,7 @@
 ##==============================================================================
 ## Script for autotrophy duration 
 ## Code author: J.R. Blaszczak
-## Last Edited: April 17, 2024
+## Last Edited: April 19, 2024
 ##
 ## Changed NEP to P:R as the metric by which we are quantifying autotrophy
 ## Added NEP Figure back in
@@ -245,9 +245,56 @@ ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(event_dur, NEP_mean, group =
   labs(x = "Event Duration (days)", y = expression('Mean NEP (g '*~O[2]~ m^-2~d^-1*')'))
 
 
+#summarize magnitude of NEP by event length
+NEP_mag <- auto_df %>%
+  group_by(duration_length) %>%
+  summarize(mean = mean(NEP_mean), sd = sd(NEP_mean))
+NEP_mag
+# 4 to 7 days = 1.7 +/- 2.5 NEP
+# 1 to 3 months = 2.3 +/- 1.7 NEP
 
+#####################################
+## Composite Figure
+#####################################
 
+plot_grid(
 
+plot_grid(
+  
+  ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(duration_length))+
+    geom_bar(alpha=0.4, fill="#4CBFBB", color="black", position="identity")+
+    theme_bw()+
+    theme(panel.grid.major.y = element_line(color="gray85"),
+          axis.title = element_text(size=14),
+          axis.text.x = element_text(size=14, angle=35, hjust = 1),
+          axis.text.y = element_text(size=14),
+          legend.position = "top")+
+    labs(x="Event duration", y="Number of events"),
+  
+  ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(event_dur, NEP_mean, group = event_dur))+
+    geom_boxplot()+
+    theme_bw(base_size = 14)+
+    scale_x_continuous(breaks = c(4,7,14,21,31,60))+
+    labs(x = "Event Duration (days)", y = expression('Mean NEP (g '*~O[2]~ m^-2~d^-1*')')),
+  
+  
+  align = "v", ncol = 1, labels = c("a","b")),
+
+  
+  
+  ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(as.factor(onset_month)))+
+    geom_bar(fill="#4CBFBB", alpha=0.4, color="black")+
+    labs(x="Month", y="Number of Events",title = "Onset Month of Autotrophic Event")+
+    facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
+    theme_bw()+
+    theme(panel.grid.major.y = element_line(color="gray85"),
+          title = element_text(size=8),
+          axis.title = element_text(size=12),
+          axis.text.x = element_text(size=12),
+          axis.text.y = element_text(size=12),
+          strip.background = element_rect(fill="white", color = "black")),
+  align = "h", ncol = 2, labels = c("","c")
+)
 
 
 
