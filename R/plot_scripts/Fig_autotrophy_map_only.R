@@ -125,6 +125,10 @@ my_breaks <- c(0.05, 0.15, 0.4, 1)
         fill = c("black", "white"),
         line_col = "black"))) # adds compass rose
 
+# Used sample code found here: https://stackoverflow.com/questions/61809382/how-can-i-put-a-scalebar-and-a-north-arrow-on-the-map-ggplot
+# Error message: Scale on map varies by more than 10%, scale bar may be inaccurate
+# Googled and this is common due to projection warping, so leaving it be
+
 (sitemap_binary <- ggplot(state_sf) + # base plot
   geom_polygon(aes(x = long, y = lat, group = group), 
                fill = "white", color = "black") + # map of states
