@@ -12,7 +12,8 @@ This Project is to study rivers that are exceptions to the long-standing dogma i
     - [Data Collection and Munging](#data-collection-and-munging)  
     - [Description of Dataset](#description-of-dataset)  
     - [Researcher Constrained Model](#researcher-constrained-model)  
-    - [Sparse Model](#sparse-model)  
+    - [Sparse Model](#sparse-model) 
+    - [Plot Scripts](#plot-scripts)
 
 <!-- Data Sets description -->
 ## Data Sets Description
@@ -61,23 +62,53 @@ This Project is to study rivers that are exceptions to the long-standing dogma i
     - Downloads NHD covariates  
     - Downloads StreamCat covariates   
     
-**4. baseflow_separation_calc_Q_metrics.R **
-    - uses FlowScreen to separate baseflow based on the Eckhardt Method
-    - contains an analysis of different baseflow index thresholds for calculating interstorm intervals
-    - calculated max and median interstorm interval for each siteyear
-    - calculated Richards-Baker Flashiness index
+**4. bulk_download_nhd_streamcat_literature_sites.R**  
+    - Pairs all literature sites to NHD comids and VPUs  
+    - NHD watersheds are discritized by reach, we calculate the distance along a reach where the site falls to correct landcover estimates from streamcat  
+    - Downloads NHD covariates  
+    - Downloads StreamCat covariates   
     
 **5. prep_watershed_data_for_model.R**  
     - Condenses streamcat and NHD variables into categories (eg. %Urban-high, %Urban-mid, and %Urban-low all combine to become %Urban). See script for specific combinations.  
     - Assigns temporally changing variables to site years based on most recent data availability (eg. 2011 - 2015 years get %Urban2011, years 2016 and on get %Urban2016).  
     - Generates the across_sites_model_data.csv file which will be used for model building.  
     
+**6. baseflow_separation_calc_Q_metrics.R **
+    - uses FlowScreen to separate baseflow based on the Eckhardt Method
+    - contains an analysis of different baseflow index thresholds for calculating interstorm intervals
+    - calculated max and median interstorm interval for each siteyear
+    - calculated Richards-Baker Flashiness index
+    
+**7. literature_download_discharge_baseflow_separation_calc_Q_metrics.R**
+    - performs the same calculations as script **6** for the literature sites  
+    
+**8. functions_calc_mag7.R**
+    - functions to calculate the magnificent 7 statistical metrics on annual data following the proceedures for normalization as in Bernhardt et al 2022 dataset. 
+    - Calculates metrics for literature sites that match those in the Bernhardt 2022 dataset.
+    
+**9. get_light_from_StreamLight_literature_sites.R**
+    - steps to download and clean light data from NLDAS and filter it through canopy using the streamlight R package for the literature sites.
+    
+**10. summarize_literature_data.R**
+    - compiles the covariates for the literature sites into the same format as the site dataset for comparison and anaysis.
+    
+**11. calculate_flow_lengths_below_dams.R**
+    - pairs points from the NABD with the NHD plus flowlines and traces flowlines upstream from sites until the nearest dam is reached. This information is used to calculate the connected drainage density.
     
 <!-- Description of Dataset -->
 ### Description of Dataset
 
 **1. describe_plot_annual_timeseries.R**    
     - Descriptive summary of the complete site years  
+    
+**2. autotrophy_duration_2024_04_17.R**
+    - calculates the duration of autotrophic events in the not gap-filled datasets
+    - plots the seasonality and magnitude of events of different timescales.
+    
+**3. Fig1map.R**
+    - plot sites on the continental USA Map scaled and colored by the cumulative annual GPP and NEP.
+    
+
     
 <!-- Researcher Constrained Model -->
 ### Researcher Constrained Model
@@ -90,6 +121,56 @@ This Project is to study rivers that are exceptions to the long-standing dogma i
     - models are run using different combinations of light, disturbance, and connectivity metrics
     - plot of model coefficients sorted by Model AIC
     
+**3. test_brms_lmer_models.R**
+    - runs linear mixed effects models on datasets using brms and lmer
+    - results not included in final manuscript
+    
+**4. within_site_across_year_variation.R**
+    - tests for the ability to detect a within site effect of covariates
+    
+**5. drainage_density_scaling.Rmd**
+    - explores the scaling properties of drainage density and connected drainage density with different watershed covariates
+    
+    
 <!-- Sparse Model -->
 ### Sparse Model
 
+**1. sparse_quantile_reg_models.R**
+    - runs sparse quantile regression models on the NEP and PR datasets using the quantreg package with the lasso option
+    - compiles model output to collect relevant covariates into a table for results and SI
+    
+**2. performance_metrics_functions.R**
+    - functions to calculate performance metrics for quantile regression models.
+    
+**3. RF-model.R**
+    - script to test random forest model on autotrophy dataset. Was not used in final manuscript.
+    
+**4. model_results_table.R**
+    - compiles the results of the sparse and constrained models for inclusion in the manuscript.
+    
+    
+<!-- Plot Scripts -->
+### Plot Scripts
+
+**1. plot_example_hydrographs.R**
+    - plots annual hydrographs from three example low disturbance rivers for conceptual figure 1.
+    
+**2. plot_site_categories.R**
+    - plots the proportion of literature sites and autotrophic sites in this study that fall into each autotrophic category
+    
+**3. Figure 3.R**
+    - Plots the model coefficients from the constrained models for PR and NEP data
+    
+**4. multipanel_density_scatterplot_figure.R**
+    - plots covariate distributions for heterotrophic and autotrophic sites in this study and for literature sites.
+    
+**5. Dunkle_constrained_PCA_annualPR.R**
+    - runs a PCA analysis on the dataset using the top model predictors
+    - plots results of the PCA along with the literature sites 
+    
+**6. plot_covariate_correlation.R**
+    - plot the correlations between the model selected and constrained covariates
+    
+**7. plot_dam_metrics_correlations.R**
+    - plot the correlations between different measures of dam influence in the watershed
+    
