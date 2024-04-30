@@ -19,7 +19,7 @@ literature_data <- read.csv(here::here("data_working/literature_streams_data_for
 
 literature_data2 <- literature_data %>%  mutate(Class = "Literature")
 
-auto_class <- read_csv('data_working/Autotrophic_site_classifications.csv') %>%
+auto_class <- read_csv(here::here('data_working/Autotrophic_site_classifications.csv')) %>%
   select(-Site, -lat, -lon)
 
 autotrophic = across_sites_model_data %>%

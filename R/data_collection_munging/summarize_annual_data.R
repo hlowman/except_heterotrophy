@@ -3,8 +3,8 @@
 
 # package from Bernhardt et al 2022, 
 # install by downloading zip file from figshare datarelease
-install.packages('C:/Users/alice.carter/Downloads/BernhardtMetabolism_0.1.1.zip',
-                 repos=NULL, type='source')
+# install.packages('C:/Users/alice.carter/Downloads/BernhardtMetabolism_0.1.1.zip',
+#                  repos=NULL, type='source')
 
 library(BernhardtMetabolism) 
 library(stringr)

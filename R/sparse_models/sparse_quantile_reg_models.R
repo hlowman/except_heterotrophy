@@ -249,6 +249,29 @@ dev.off()
 
 
 # make a table for the SI with all of the covariates included in the model and their estimates.
+
+
+var_names <- colnames(dd[,c(3,4,7:ncol(dd))]) 
+var_list <- dat %>%
+  filter(!is.na(site_name))%>%
+  filter(ws_area_km2>0) %>%
+  group_by(site_name) %>%
+  summarize(across(where(is.numeric), median, na.rm = T)) %>%
+  select(all_of(var_names)) %>%
+  summarize(across(everything(),
+                   .fns = list(min = ~min(., na.rm = T), 
+                               max = ~max(., na.rm = T),
+                               mean = ~mean(., na.rm = T)))) %>%
+  pivot_longer(cols = everything(), 
+               names_to = c('variable', 'stat' ), 
+               values_to = 'value',
+               names_pattern = '(.+?)_(min|mean|max)$') %>%
+  pivot_wider(id_cols = variable,
+              names_from = stat,
+              values_from = value)
+
+
+
 coef_tab <- coefs %>% 
   rename(NEP_est = value_nep, NEP_se = se_nep,
          NEP_pval = p_val_nep, NEP_tval = t_val_nep,

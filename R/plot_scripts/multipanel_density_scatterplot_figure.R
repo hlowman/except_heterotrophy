@@ -206,8 +206,11 @@ plot_comb_dens(dat, 'RBI')
 plot_comb_dens(dat, 'MOD_ann_NPP')
 plot_comb_dens(dat, 'PrecipWs')
 plot_comb_dens(dat, 'width_to_area', log = TRUE)
-plot_comb_dens(dat, 'drainage_density_connected', 'Connected drainage density')
 
+png(file = 'figures/covariate_density_cdd.png', width = 4.5, height = 3.5, type = 'cairo',
+    res = 300, units = 'in')
+  plot_comb_dens(dat, 'drainage_density_connected', 'Connected drainage density')
+dev.off()
 # other
 plot_comb_dens(dat, 'ElevWs', log = TRUE)
 plot_comb_dens(dat, 'TmeanWs')
