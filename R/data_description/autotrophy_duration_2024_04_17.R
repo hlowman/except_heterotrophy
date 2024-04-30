@@ -262,38 +262,36 @@ plot_grid(
 plot_grid(
   
   ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(duration_length))+
-    geom_bar(alpha=0.4, fill="#4CBFBB", color="black", position="identity")+
-    theme_bw()+
+    geom_bar(alpha=0.7, fill="chartreuse4", color="black", position="identity")+
+    theme_bw(base_size = 12)+
     theme(panel.grid.major.y = element_line(color="gray85"),
-          axis.title = element_text(size=14),
-          axis.text.x = element_text(size=14, angle=35, hjust = 1),
-          axis.text.y = element_text(size=14),
-          legend.position = "top")+
-    labs(x="Event duration", y="Number of events"),
+          axis.title.x = element_blank(),
+          axis.text.x = element_text(size=10, angle=25, hjust = 1))+
+    labs(title="a. Number of events by event duration", y="Number of events"),
   
   ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(event_dur, NEP_mean, group = event_dur))+
     geom_boxplot()+
-    theme_bw(base_size = 14)+
+    theme_bw(base_size = 12)+
     scale_x_continuous(breaks = c(4,7,14,21,31,60))+
-    labs(x = "Event Duration (days)", y = expression('Mean NEP (g '*~O[2]~ m^-2~d^-1*')')),
+    labs(x = "Event Duration (days)",
+         y = expression('Mean NEP (g '*~O[2]~ m^-2~d^-1*')'),
+         title = "b. Mean NEP by event duration"),
   
   
-  align = "v", ncol = 1, labels = c("a","b")),
+  align = "v", ncol = 1),# labels = c("a","b")),
 
   
   
   ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(as.factor(onset_month)))+
-    geom_bar(fill="#4CBFBB", alpha=0.4, color="black")+
-    labs(x="Month", y="Number of Events",title = "Onset Month of Autotrophic Event")+
+    geom_bar(fill="chartreuse4", alpha=0.7, color="black")+
+    labs(x="Month",
+         y="Number of Events",
+         title = "c. Onset month of autotrophic event")+
     facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
-    theme_bw()+
+    theme_bw(base_size = 12)+
     theme(panel.grid.major.y = element_line(color="gray85"),
-          title = element_text(size=8),
-          axis.title = element_text(size=12),
-          axis.text.x = element_text(size=12),
-          axis.text.y = element_text(size=12),
           strip.background = element_rect(fill="white", color = "black")),
-  align = "h", ncol = 2, labels = c("","c")
+  align = "h", ncol = 2 #, labels = c("","c")
 )
 
 
