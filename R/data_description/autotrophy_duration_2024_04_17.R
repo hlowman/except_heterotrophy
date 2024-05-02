@@ -269,10 +269,11 @@ plot_grid(
           axis.text.x = element_text(size=10, angle=25, hjust = 1))+
     labs(title="a. Number of events by event duration", y="Number of events"),
   
-  ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(event_dur, NEP_mean, group = event_dur))+
+  ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(duration_length, NEP_mean, group = duration_length))+
     geom_boxplot()+
     theme_bw(base_size = 12)+
-    scale_x_continuous(breaks = c(4,7,14,21,31,60))+
+    scale_y_continuous(trans = "log")+
+    #scale_x_continuous(breaks = c(4,7,14,21,31,60))+
     labs(x = "Event Duration (days)",
          y = expression('Mean NEP (g '*~O[2]~ m^-2~d^-1*')'),
          title = "b. Mean NEP by event duration"),
