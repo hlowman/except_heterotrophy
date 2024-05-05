@@ -205,8 +205,8 @@ auto_df$onset_month <- month(auto_df$start_date)
 auto_df$end_month <- month(auto_df$end_date)
 
 #all (4+ days)
-ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(as.factor(onset_month)))+
-  geom_bar(fill="#010D26", alpha=0.4, color="black")+
+ggplot(auto_df, aes(as.factor(onset_month)))+
+  geom_bar(fill="#010D26", alpha=0.7, color="black")+
   geom_bar(aes(end_month), fill="#4CBFBB", alpha=0.5, color="black")+
   labs(x="Month", y="Number of Events",title = "Onset Month = grey, End Month = teal")+
   facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
@@ -217,6 +217,7 @@ ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(as.factor(onset_month)))+
         axis.text.x = element_text(size=12),
         axis.text.y = element_text(size=12),
         strip.background = element_rect(fill="white", color = "black"))
+
 #Onset only
 ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(as.factor(onset_month)))+
   geom_bar(fill="#4CBFBB", alpha=0.4, color="black")+
@@ -256,43 +257,43 @@ NEP_mag
 #####################################
 ## Composite Figure
 #####################################
+scaleFUN <- function(x) sprintf("%.2f", x)
 
 plot_grid(
 
 plot_grid(
   
   ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(duration_length))+
-    geom_bar(alpha=0.7, fill="chartreuse4", color="black", position="identity")+
+    geom_bar(alpha=0.7, fill="black", color="black", position="identity")+
     theme_bw(base_size = 12)+
     theme(panel.grid.major.y = element_line(color="gray85"),
           axis.title.x = element_blank(),
-          axis.text.x = element_text(size=10, angle=25, hjust = 1))+
-    labs(title="a. Number of events by event duration", y="Number of events"),
+          axis.text.x = element_blank())+
+    labs(y="Number of Events"),
   
   ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(duration_length, NEP_mean, group = duration_length))+
-    geom_boxplot()+
+    geom_boxplot(fill="black",alpha=0.7)+
     theme_bw(base_size = 12)+
-    scale_y_continuous(trans = "log")+
-    #scale_x_continuous(breaks = c(4,7,14,21,31,60))+
-    labs(x = "Event Duration (days)",
-         y = expression('Mean NEP (g '*~O[2]~ m^-2~d^-1*')'),
-         title = "b. Mean NEP by event duration"),
+    scale_y_continuous(trans = "log", breaks = c(0.05, 0.5, 5, 30))+
+    labs(x = "Event Duration",
+         y = expression('Mean NEP (g '*~O[2]~ m^-2~d^-1*')'))+
+    theme(axis.text.x = element_text(size=10, angle=45, hjust = 1),
+          axis.text.y = element_text()),
   
   
-  align = "v", ncol = 1),# labels = c("a","b")),
+  align = "v", ncol = 1, rel_heights = c(0.6,1), labels = c("A","B")),
 
   
   
   ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(as.factor(onset_month)))+
-    geom_bar(fill="chartreuse4", alpha=0.7, color="black")+
-    labs(x="Month",
-         y="Number of Events",
-         title = "c. Onset month of autotrophic event")+
+    geom_bar(fill="black", alpha=0.7, color="black")+
+    labs(x="Month of Onset",
+         y="Number of Events")+
     facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
     theme_bw(base_size = 12)+
     theme(panel.grid.major.y = element_line(color="gray85"),
           strip.background = element_rect(fill="white", color = "black")),
-  align = "h", ncol = 2 #, labels = c("","c")
+  align = "h", ncol = 2, labels = c("","C")
 )
 
 
