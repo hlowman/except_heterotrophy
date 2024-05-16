@@ -246,7 +246,7 @@ ggplot(onset_events_df, aes(as.factor(onset_month), onset_mean_by_site))+
         strip.background = element_rect(fill="white", color = "black"))
 
 ## Onset only and 4+ days only for main text
-ggplot(onset_events_df[-which(onset_events_df$event_dur < 4),], aes(as.factor(onset_month), onset_mean_by_site))+
+ggplot(onset_events_df[-which(onset_events_df$duration_length == "1 day to 3 days"),], aes(as.factor(onset_month), onset_mean_by_site))+
   geom_bar(stat = "identity")+
   facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
   labs(x="Month", y="Mean Number of Events Per Site",
@@ -259,39 +259,6 @@ ggplot(onset_events_df[-which(onset_events_df$event_dur < 4),], aes(as.factor(on
         axis.text.y = element_text(size=12),
         strip.background = element_rect(fill="white", color = "black"))
 
-
-
-
-  
-
-
-#all (4+ days)
-ggplot(auto_df, aes(as.factor(onset_month)))+
-  geom_bar(fill="#010D26", alpha=0.7, color="black")+
-  geom_bar(aes(end_month), fill="#4CBFBB", alpha=0.5, color="black")+
-  labs(x="Month", y="Mean Number of Events Per Site",
-       title = "Onset Month = grey, End Month = teal")+
-  facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
-  theme_bw()+
-  theme(panel.grid.major.y = element_line(color="gray85"),
-        title = element_text(size=8),
-        axis.title = element_text(size=12),
-        axis.text.x = element_text(size=12),
-        axis.text.y = element_text(size=12),
-        strip.background = element_rect(fill="white", color = "black"))
-
-#Onset only
-ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(as.factor(onset_month)))+
-  geom_bar(fill="#4CBFBB", alpha=0.4, color="black")+
-  labs(x="Month", y="Number of Events",title = "Onset Month of Autotrophic Event")+
-  facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
-  theme_bw()+
-  theme(panel.grid.major.y = element_line(color="gray85"),
-        title = element_text(size=8),
-        axis.title = element_text(size=12),
-        axis.text.x = element_text(size=12),
-        axis.text.y = element_text(size=12),
-        strip.background = element_rect(fill="white", color = "black"))
 
 ## 5 ## Magnitude of Mean P:R & NEP during events
 
@@ -347,14 +314,18 @@ plot_grid(
 
   
   
-  ggplot(auto_df[-which(auto_df$event_dur < 4),], aes(as.factor(onset_month)))+
-    geom_bar(fill="black", alpha=0.7, color="black")+
-    labs(x="Month of Onset",
-         y="Number of Events")+
-    facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
-    theme_bw(base_size = 12)+
-    theme(panel.grid.major.y = element_line(color="gray85"),
-          strip.background = element_rect(fill="white", color = "black")),
+ggplot(onset_events_df[-which(onset_events_df$duration_length == "1 day to 3 days"),], aes(as.factor(onset_month), onset_mean_by_site))+
+  geom_bar(stat = "identity")+
+  facet_wrap(~as.factor(duration_length), ncol=1, scales = "free_y")+
+  labs(x="Month", y="Mean Number of Events Per Site",
+       title = "Onset Month = grey, End Month = teal")+
+  theme_bw(base_size = 12)+
+  theme(panel.grid.major.y = element_line(color="gray85"),
+        title = element_text(size=8),
+        axis.title = element_text(size=12),
+        axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12),
+        strip.background = element_rect(fill="white", color = "black")),
   align = "h", ncol = 2, labels = c("","C")
 )
 
