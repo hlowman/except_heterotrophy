@@ -6,7 +6,7 @@
 lapply(c("lubridate","cowplot",
          "tidyverse", "reshape2",
          "ggmap","maps","mapdata", "mapproj",
-         "ggsn", "sf", "ggspatial"), require, character.only=T)
+         "viridis", "sf", "ggspatial"), require, character.only=T)
 
 ## Import Data
 GPP_info <- read_csv("data_working/across_sites_model_data.csv") %>%
@@ -98,12 +98,12 @@ my_breaks <- c(0.05, 0.15, 0.4, 1)
                  fill = "white", color = "black") + # map of states
     geom_point(data = AI_sf, aes(x = lon, y = lat,
                                  color = mean_PR_annual, 
-                                 size = mean_GPP_annual),
-               alpha = 0.95) + # map of sites
+                                 size = mean_GPP_annual)) + # map of sites
     labs(x = "Longitude", y = "Latitude") +
     scale_color_gradientn("Mean Annual P:R", 
-                          colors = c("#F0C9C0", "#EDB48E", 
-                                     "#E8C32E", "#E6E600", "#00A600"),
+                          colors = c("#440154FF", "#482677FF", 
+                                     "#404788FF", "#2D708EFF",
+                                     "#73D055FF", "#95D840FF"),
                                              trans = "log",
                           breaks = my_breaks, labels = my_breaks) +
     # based on terrain.colors(n = 10) # custom colors
@@ -154,7 +154,7 @@ my_breaks <- c(0.05, 0.15, 0.4, 1)
 
 # export exploratory figures
 # ggsave(sitemap,
-#        filename = "figures/Annual_GPP_PR_USmap_043024.png",
+#        filename = "figures/Annual_GPP_PR_USmap_071924.png",
 #        width = 22,
 #        height = 11,
 #        units = "cm"
